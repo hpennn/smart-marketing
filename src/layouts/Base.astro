@@ -1,0 +1,50 @@
+---
+interface Props {
+  title: string;
+  active?: string;
+}
+const { title, active = '' } = Astro.props;
+---
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{title} - 智能营销</title>
+  <meta name="description" content="AI驱动的一站式智能营销平台，支持多平台文案生成、批量推广、内容发布管理" />
+</head>
+<body class="bg-gray-50 min-h-screen" data-active={active}>
+  <!-- Navigation -->
+  <nav class="bg-white border-b border-gray-200 sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
+      <a href="/" class="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600">
+        🚀 智能营销
+      </a>
+      <div class="flex items-center gap-1">
+        <a href="/" class="nav-link px-3 py-1.5 rounded-lg text-sm " data-nav="home">首页</a>
+        <a href="/copy" class="nav-link px-3 py-1.5 rounded-lg text-sm" data-nav="copy">文案生成</a>
+        <a href="/generate" class="nav-link px-3 py-1.5 rounded-lg text-sm" data-nav="generate">批量推广</a>
+        <a href="/publish" class="nav-link px-3 py-1.5 rounded-lg text-sm" data-nav="publish">发布管理</a>
+      </div>
+    </div>
+  </nav>
+
+  <slot />
+
+  <script is:inline>
+    // Highlight active nav
+    const active = document.body.getAttribute('data-active') || '';
+    document.querySelectorAll('.nav-link').forEach(link => {
+      if (link.dataset.nav === active) {
+        link.classList.add('bg-purple-50', 'text-purple-700', 'font-medium');
+      } else {
+        link.classList.add('text-gray-600', 'hover:bg-gray-100');
+      }
+    });
+  </script>
+</body>
+</html>
+
+<style is:inline>
+  .nav-link { transition: all 0.15s; }
+</style>

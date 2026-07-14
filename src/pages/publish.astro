@@ -1,0 +1,285 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="发布管理" active="publish">
+<main class="max-w-6xl mx-auto px-4 py-8">
+  <!-- 顶部说明 -->
+  <div class="bg-purple-50 rounded-2xl p-4 mb-6 flex items-center gap-3 border border-purple-100">
+    <span class="text-2xl">💡</span>
+    <p class="text-sm text-purple-700">从「<a href="/copy" class="font-medium underline">文案生成</a>」或「<a href="/generate" class="font-medium underline">批量推广</a>」生成的内容会自动保存在这里</p>
+  </div>
+
+  <!-- 内容列表 -->
+  <div id="history-list" class="space-y-4"></div>
+
+  <!-- 空状态 -->
+  <div id="empty-state" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 flex flex-col items-center justify-center text-gray-400">
+    <div class="text-6xl mb-4">📭</div>
+    <p class="text-lg font-medium">还没有生成的内容</p>
+    <p class="text-sm mt-1 mb-6">去生成一些推广内容吧，生成后会自动保存在这里</p>
+    <div class="flex gap-3">
+      <a href="/copy" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-sm font-medium hover:from-purple-700 hover:to-indigo-700 transition-all">
+        ✍️ 文案生成
+      </a>
+      <a href="/generate" class="px-5 py-2.5 rounded-xl border border-purple-200 text-purple-600 text-sm font-medium hover:bg-purple-50 transition-all">
+        🚀 批量推广
+      </a>
+    </div>
+  </div>
+</main>
+
+<script>
+  const PLATFORMS: Record<string, { name: string; emoji: string }> = {
+    xiaohongshu: { name: '小红书', emoji: '📕' },
+    zhihu: { name: '知乎', emoji: '📘' },
+    wechat: { name: '微信公众号', emoji: '💬' },
+    douyin: { name: '抖音', emoji: '🎵' },
+    bilibili: { name: '哔哩哔哩', emoji: '📺' },
+    weibo: { name: '微博', emoji: '📢' },
+    qywechat: { name: '企业微信', emoji: '👥' },
+    toutiao: { name: '头条号', emoji: '🔥' },
+    jike: { name: '即刻', emoji: '📌' },
+  };
+
+  const PUBLISH_LINKS: Record<string, { name: string; url: string }> = {
+    xiaohongshu: { name: '小红书', url: 'https://creator.xiaohongshu.com/publish/publish' },
+    zhihu: { name: '知乎', url: 'https://www.zhihu.com/creator' },
+    wechat: { name: '微信公众号', url: 'https://mp.weixin.qq.com/' },
+    douyin: { name: '抖音', url: 'https://creator.douyin.com/creator-micro/content/upload' },
+    bilibili: { name: '哔哩哔哩', url: 'https://member.bilibili.com/platform/upload/text' },
+    weibo: { name: '微博', url: 'https://weibo.com' },
+    toutiao: { name: '头条号', url: 'https://mp.toutiao.com/' },
+    jike: { name: '即刻', url: 'https://web.okjike.com/' },
+  };
+
+  // 模块级缓存，避免在 data 属性中存储大段文本
+  let historyCache: any[] = [];
+
+  function escapeHtml(text: string): string {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  function loadHistory(): any[] {
+    try {
+      return JSON.parse(localStorage.getItem('smart_marketing_history') || '[]');
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveHistory(history: any[]) {
+    try {
+      localStorage.setItem('smart_marketing_history', JSON.stringify(history));
+    } catch (e) {
+      console.error('保存失败', e);
+    }
+  }
+
+  function renderHistory() {
+    historyCache = loadHistory();
+    const listEl = document.getElementById('history-list')!;
+    const emptyEl = document.getElementById('empty-state')!;
+
+    if (historyCache.length === 0) {
+      listEl.innerHTML = '';
+      emptyEl.classList.remove('hidden');
+      return;
+    }
+
+    emptyEl.classList.add('hidden');
+    listEl.innerHTML = '';
+
+    historyCache.forEach((item: any, index: number) => {
+      const card = document.createElement('div');
+      card.className = 'bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden';
+      card.dataset.index = index.toString();
+
+      // 平台标签
+      const platformTags = (item.platforms || []).map((pid: string) => {
+        const p = PLATFORMS[pid];
+        return p
+          ? `<span class="text-xs bg-purple-50 text-purple-600 px-2 py-0.5 rounded-full">${p.emoji} ${p.name}</span>`
+          : '';
+      }).join('');
+
+      // 判断有哪些内容 tab
+      const hasCopy = item.copy && item.copy.length > 0;
+      const hasImage = item.image && item.image.trim();
+      const hasVideo = item.video && item.video.trim();
+
+      const tabs: string[] = [];
+      if (hasCopy) tabs.push('copy');
+      if (hasImage) tabs.push('image');
+      if (hasVideo) tabs.push('video');
+
+      const tabLabels: Record<string, string> = {
+        copy: '✍️ 文案',
+        image: '🎨 配图',
+        video: '🎬 视频',
+      };
+
+      // 发布链接
+      const publishLinks = (item.platforms || [])
+        .filter((pid: string) => PUBLISH_LINKS[pid])
+        .map((pid: string) => {
+          const link = PUBLISH_LINKS[pid];
+          const p = PLATFORMS[pid];
+          return `<a href="${link.url}" target="_blank" rel="noopener" class="px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:border-purple-300 hover:text-purple-600 transition-all text-xs font-medium flex items-center gap-1.5">
+            ${p?.emoji || ''} ${link.name} →
+          </a>`;
+        }).join('');
+
+      const tabButtons = tabs.map((t, i) => `
+        <button class="pub-tab-btn flex-1 py-2.5 text-sm font-medium transition-all border-b-2 ${i === 0 ? 'border-purple-600 text-purple-600' : 'border-transparent text-gray-500 hover:text-gray-700'}" data-tab="${t}" data-card-index="${index}">
+          ${tabLabels[t]}
+        </button>
+      `).join('');
+
+      const tabPanels = tabs.map((t, i) => {
+        let content = '';
+        if (t === 'copy') {
+          const copyItems = item.copy.map((c: any, ci: number) => {
+            const p = PLATFORMS[c.platform];
+            return `<div class="border-b border-gray-100 last:border-0 pb-3 mb-3 last:pb-0 last:mb-0">
+              <div class="flex items-center justify-between mb-1.5">
+                <span class="text-xs font-medium text-gray-500">${p?.emoji || ''} ${p?.name || c.platform}</span>
+                <button class="pub-copy-btn px-2.5 py-1 rounded-lg border border-purple-200 text-purple-600 hover:bg-purple-50 transition-all text-xs font-medium" data-card-index="${index}" data-copy-type="copy" data-copy-sub="${ci}">
+                  📋 复制
+                </button>
+              </div>
+              <div class="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">${escapeHtml(c.content)}</div>
+            </div>`;
+          }).join('');
+          content = `<div class="overflow-y-auto" style="max-height: 400px;">${copyItems}</div>`;
+        } else if (t === 'image') {
+          content = `<div class="flex items-center justify-between mb-3">
+              <span class="text-xs text-gray-400">AI配图提示词</span>
+              <button class="pub-copy-btn px-3 py-1.5 rounded-lg border border-purple-200 text-purple-600 hover:bg-purple-50 transition-all text-xs font-medium" data-card-index="${index}" data-copy-type="image">📋 复制提示词</button>
+            </div>
+            <div class="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap overflow-y-auto bg-gray-50 rounded-xl p-4" style="max-height: 400px;">${escapeHtml(item.image)}</div>`;
+        } else if (t === 'video') {
+          content = `<div class="flex items-center justify-between mb-3">
+              <span class="text-xs text-gray-400">视频脚本</span>
+              <button class="pub-copy-btn px-3 py-1.5 rounded-lg border border-purple-200 text-purple-600 hover:bg-purple-50 transition-all text-xs font-medium" data-card-index="${index}" data-copy-type="video">📋 复制脚本</button>
+            </div>
+            <div class="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap overflow-y-auto bg-gray-50 rounded-xl p-4" style="max-height: 400px;">${escapeHtml(item.video)}</div>`;
+        }
+        return `<div class="pub-tab-panel p-4 ${i === 0 ? '' : 'hidden'}" data-tab="${t}" data-card-index="${index}">${content}</div>`;
+      }).join('');
+
+      card.innerHTML = `
+        <!-- 卡片头部 -->
+        <div class="px-5 pt-5 pb-3">
+          <div class="flex items-start justify-between">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-xs text-gray-400">${item.date || ''}</span>
+              </div>
+              <h3 class="font-semibold text-gray-900">${escapeHtml(item.product || '未命名产品')}</h3>
+            </div>
+            <button class="delete-btn text-gray-400 hover:text-red-500 transition-colors p-1" data-card-index="${index}" title="删除">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3"/></svg>
+            </button>
+          </div>
+          <div class="flex flex-wrap gap-1.5 mt-2">
+            ${platformTags}
+          </div>
+        </div>
+
+        <!-- Tab 切换 -->
+        ${tabs.length > 0 ? `
+        <div class="border-t border-gray-100">
+          <div class="flex">
+            ${tabButtons}
+          </div>
+          ${tabPanels}
+        </div>
+        ` : ''}
+
+        <!-- 发布链接 -->
+        ${publishLinks ? `
+        <div class="px-5 py-4 bg-gray-50 border-t border-gray-100">
+          <p class="text-xs text-gray-400 mb-2">一键跳转发布</p>
+          <div class="flex flex-wrap gap-2">
+            ${publishLinks}
+          </div>
+        </div>
+        ` : ''}
+      `;
+
+      listEl.appendChild(card);
+    });
+
+    // 绑定 Tab 切换
+    document.querySelectorAll('.pub-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tab = (btn as HTMLElement).dataset.tab!;
+        const cardIndex = (btn as HTMLElement).dataset.cardIndex!;
+        const card = document.querySelector(`[data-index="${cardIndex}"]`)!;
+
+        card.querySelectorAll('.pub-tab-btn').forEach((b: Element) => {
+          b.classList.remove('border-purple-600', 'text-purple-600');
+          b.classList.add('border-transparent', 'text-gray-500');
+        });
+        btn.classList.add('border-purple-600', 'text-purple-600');
+        btn.classList.remove('border-transparent', 'text-gray-500');
+
+        card.querySelectorAll('.pub-tab-panel').forEach((panel: Element) => {
+          if ((panel as HTMLElement).dataset.tab === tab) {
+            panel.classList.remove('hidden');
+          } else {
+            panel.classList.add('hidden');
+          }
+        });
+      });
+    });
+
+    // 绑定复制按钮 — 从 historyCache 查找内容，不依赖 data 属性存文本
+    document.querySelectorAll('.pub-copy-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const el = btn as HTMLElement;
+        const cardIndex = parseInt(el.dataset.cardIndex!);
+        const copyType = el.dataset.copyType!;
+        const copySub = el.dataset.copySub;
+
+        let content = '';
+        const item = historyCache[cardIndex];
+        if (!item) return;
+
+        if (copyType === 'copy' && copySub !== undefined) {
+          content = item.copy?.[parseInt(copySub)]?.content || '';
+        } else if (copyType === 'image') {
+          content = item.image || '';
+        } else if (copyType === 'video') {
+          content = item.video || '';
+        }
+
+        if (!content) return;
+
+        navigator.clipboard.writeText(content).then(() => {
+          const original = btn.innerHTML;
+          btn.innerHTML = '✅ 已复制';
+          setTimeout(() => { btn.innerHTML = original; }, 2000);
+        }).catch(() => alert('复制失败'));
+      });
+    });
+
+    // 绑定删除按钮
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const cardIndex = parseInt((btn as HTMLElement).dataset.cardIndex!);
+        if (!confirm('确定要删除这条记录吗？')) return;
+        const history = loadHistory();
+        history.splice(cardIndex, 1);
+        saveHistory(history);
+        renderHistory();
+      });
+    });
+  }
+
+  renderHistory();
+</script>
+</Base>

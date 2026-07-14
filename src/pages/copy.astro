@@ -1,0 +1,227 @@
+---
+import Base from '../layouts/Base.astro';
+
+const PLATFORMS = [
+  { id: 'xiaohongshu', name: '小红书', emoji: '📕' },
+  { id: 'zhihu', name: '知乎', emoji: '📘' },
+  { id: 'wechat', name: '微信公众号', emoji: '💬' },
+  { id: 'douyin', name: '抖音', emoji: '🎵' },
+  { id: 'bilibili', name: '哔哩哔哩', emoji: '📺' },
+  { id: 'weibo', name: '微博', emoji: '📢' },
+  { id: 'qywechat', name: '企业微信', emoji: '👥' },
+  { id: 'toutiao', name: '头条号', emoji: '🔥' },
+  { id: 'jike', name: '即刻', emoji: '📌' },
+];
+---
+
+<Base title="文案生成" active="copy">
+<main class="max-w-6xl mx-auto px-4 py-8">
+  <div class="flex flex-col md:flex-row gap-6">
+    <!-- 左侧表单区 -->
+    <div class="md:w-1/3">
+      <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">选择平台</h2>
+        <div id="platform-grid" class="grid grid-cols-3 gap-2 mb-6">
+          {PLATFORMS.map(p => (
+            <div class="platform-card cursor-pointer flex flex-col items-center gap-1 p-3 rounded-xl border-2 border-gray-200 hover:border-purple-300 transition-all text-center" data-platform={p.id} data-name={p.name} data-emoji={p.emoji}>
+              <span class="text-2xl">{p.emoji}</span>
+              <span class="text-xs font-medium text-gray-700">{p.name}</span>
+            </div>
+          ))}
+        </div>
+
+        <label class="block text-sm font-medium text-gray-700 mb-2">产品名称/描述</label>
+        <textarea id="product-input" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none mb-4" placeholder="输入产品名称、核心卖点、目标人群..."></textarea>
+
+        <label class="block text-sm font-medium text-gray-700 mb-2">额外要求</label>
+        <input id="extra-input" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent mb-6" placeholder="风格、字数、特殊要求（选填）">
+
+        <button id="generate-btn" class="w-full py-3 rounded-xl text-white font-medium bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
+          <span id="btn-text" class="flex items-center gap-2">✨ 生成文案</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 右侧结果区 -->
+    <div class="md:w-2/3">
+      <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 min-h-[400px] flex flex-col">
+        <!-- 空状态 -->
+        <div id="empty-state" class="flex-1 flex flex-col items-center justify-center text-gray-400">
+          <div class="text-6xl mb-4">📝</div>
+          <p class="text-lg font-medium">选择平台并输入产品信息</p>
+          <p class="text-sm mt-1">AI 将为你生成专业的推广文案</p>
+        </div>
+
+        <!-- 结果内容 -->
+        <div id="result-content" class="hidden flex-1 flex flex-col">
+          <div class="flex items-center justify-between mb-4">
+            <h3 id="result-platform" class="font-semibold text-gray-900 text-lg"></h3>
+            <span class="text-xs text-gray-400" id="result-date"></span>
+          </div>
+          <div id="result-text" class="flex-1 whitespace-pre-wrap text-gray-700 text-sm leading-relaxed bg-gray-50 rounded-xl p-4 overflow-y-auto" style="max-height: 500px;"></div>
+          <div class="flex gap-3 mt-4">
+            <button id="copy-btn" class="flex-1 py-2.5 rounded-xl border border-purple-200 text-purple-600 hover:bg-purple-50 transition-all text-sm font-medium flex items-center justify-center gap-2">
+              📋 复制文案
+            </button>
+            <button id="regenerate-btn" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700 transition-all text-sm font-medium flex items-center justify-center gap-2">
+              🔄 重新生成
+            </button>
+          </div>
+        </div>
+
+        <!-- 错误状态 -->
+        <div id="error-state" class="hidden flex-1 flex flex-col items-center justify-center text-red-400">
+          <div class="text-5xl mb-4">😢</div>
+          <p class="text-lg font-medium" id="error-msg">生成失败</p>
+          <p class="text-sm mt-1 text-gray-400">请检查网络后重试</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+  const PLATFORMS = [
+    { id: 'xiaohongshu', name: '小红书', emoji: '📕' },
+    { id: 'zhihu', name: '知乎', emoji: '📘' },
+    { id: 'wechat', name: '微信公众号', emoji: '💬' },
+    { id: 'douyin', name: '抖音', emoji: '🎵' },
+    { id: 'bilibili', name: '哔哩哔哩', emoji: '📺' },
+    { id: 'weibo', name: '微博', emoji: '📢' },
+    { id: 'qywechat', name: '企业微信', emoji: '👥' },
+    { id: 'toutiao', name: '头条号', emoji: '🔥' },
+    { id: 'jike', name: '即刻', emoji: '📌' },
+  ];
+
+  let selectedPlatform = '';
+  let lastResult = null;
+  let lastProduct = '';
+  let lastExtra = '';
+
+  const spinnerSVG = '<svg class="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>';
+
+  // 平台卡片选择
+  document.querySelectorAll('.platform-card').forEach(card => {
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.platform-card').forEach(c => {
+        c.classList.remove('border-purple-500', 'bg-purple-50');
+        c.classList.add('border-gray-200');
+      });
+      card.classList.add('border-purple-500', 'bg-purple-50');
+      card.classList.remove('border-gray-200');
+      selectedPlatform = card.dataset.platform;
+    });
+  });
+
+  const generateBtn = document.getElementById('generate-btn')!;
+  const btnText = document.getElementById('btn-text')!;
+  const emptyState = document.getElementById('empty-state')!;
+  const resultContent = document.getElementById('result-content')!;
+  const errorState = document.getElementById('error-state')!;
+  const resultText = document.getElementById('result-text')!;
+  const resultPlatform = document.getElementById('result-platform')!;
+  const resultDate = document.getElementById('result-date')!;
+
+  function showState(state: 'empty' | 'result' | 'error') {
+    emptyState.classList.toggle('hidden', state !== 'empty');
+    resultContent.classList.toggle('hidden', state !== 'result');
+    errorState.classList.toggle('hidden', state !== 'error');
+    if (state === 'result') {
+      resultContent.classList.add('flex');
+    } else {
+      resultContent.classList.remove('flex');
+    }
+  }
+
+  function setLoading(loading: boolean) {
+    generateBtn.disabled = loading;
+    if (loading) {
+      btnText.innerHTML = spinnerSVG + '<span>生成中...</span>';
+    } else {
+      btnText.innerHTML = '✨ 生成文案';
+    }
+  }
+
+  async function generate() {
+    if (!selectedPlatform) {
+      alert('请先选择平台');
+      return;
+    }
+    const product = (document.getElementById('product-input') as HTMLTextAreaElement).value.trim();
+    if (!product) {
+      alert('请输入产品信息');
+      return;
+    }
+    const extra = (document.getElementById('extra-input') as HTMLInputElement).value.trim();
+    lastProduct = product;
+    lastExtra = extra;
+
+    setLoading(true);
+    showState('empty');
+
+    try {
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'copy',
+          product,
+          platforms: [selectedPlatform],
+          extra,
+        }),
+      });
+      const data = await res.json();
+
+      if (data.success && data.results?.copy?.length > 0) {
+        lastResult = data.results.copy[0];
+        const platformInfo = PLATFORMS.find(p => p.id === lastResult.platform);
+        resultPlatform.textContent = `${platformInfo ? platformInfo.emoji + ' ' + platformInfo.name : lastResult.platform}`;
+        resultDate.textContent = new Date().toLocaleDateString('zh-CN');
+        resultText.textContent = lastResult.content;
+        showState('result');
+
+        // 保存到 localStorage
+        try {
+          const history = JSON.parse(localStorage.getItem('smart_marketing_history') || '[]');
+          history.push({
+            id: Date.now().toString(),
+            date: new Date().toISOString().slice(0, 10),
+            product,
+            platforms: [selectedPlatform],
+            copy: [lastResult],
+            image: '',
+            video: '',
+          });
+          localStorage.setItem('smart_marketing_history', JSON.stringify(history));
+        } catch (e) {
+          console.error('保存历史失败', e);
+        }
+      } else {
+        document.getElementById('error-msg')!.textContent = data.error || '生成失败';
+        showState('error');
+      }
+    } catch (e) {
+      document.getElementById('error-msg')!.textContent = '网络错误';
+      showState('error');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  generateBtn.addEventListener('click', generate);
+  document.getElementById('regenerate-btn')!.addEventListener('click', generate);
+
+  document.getElementById('copy-btn')!.addEventListener('click', () => {
+    if (lastResult) {
+      navigator.clipboard.writeText(lastResult.content).then(() => {
+        const btn = document.getElementById('copy-btn')!;
+        const original = btn.innerHTML;
+        btn.innerHTML = '✅ 已复制';
+        setTimeout(() => { btn.innerHTML = original; }, 2000);
+      }).catch(() => {
+        alert('复制失败，请手动复制');
+      });
+    }
+  });
+</script>
+</Base>

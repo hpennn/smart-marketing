@@ -1,0 +1,476 @@
+---
+import Base from '../layouts/Base.astro';
+
+const PLATFORMS = [
+  { id: 'xiaohongshu', name: '小红书', emoji: '📕' },
+  { id: 'zhihu', name: '知乎', emoji: '📘' },
+  { id: 'wechat', name: '微信公众号', emoji: '💬' },
+  { id: 'douyin', name: '抖音', emoji: '🎵' },
+  { id: 'bilibili', name: '哔哩哔哩', emoji: '📺' },
+  { id: 'weibo', name: '微博', emoji: '📢' },
+  { id: 'qywechat', name: '企业微信', emoji: '👥' },
+  { id: 'toutiao', name: '头条号', emoji: '🔥' },
+  { id: 'jike', name: '即刻', emoji: '📌' },
+];
+---
+
+<Base title="批量推广" active="generate">
+<main class="max-w-6xl mx-auto px-4 py-8">
+  <!-- 顶部输入区 -->
+  <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 mb-6">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-semibold text-gray-900">批量推广生成</h2>
+      <button id="toggle-input" class="text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1">
+        <span id="toggle-text">收起</span>
+        <svg id="toggle-icon" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
+      </button>
+    </div>
+
+    <div id="input-area" class="space-y-5">
+      <!-- 产品描述 -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">产品描述</label>
+        <textarea id="product-input" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none" placeholder="输入产品名称、核心卖点、目标人群、使用场景等..."></textarea>
+      </div>
+
+      <!-- 平台多选 -->
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <label class="block text-sm font-medium text-gray-700">选择平台</label>
+          <div class="flex gap-2">
+            <button id="select-all" class="text-xs text-purple-600 hover:text-purple-700 font-medium">全选</button>
+            <span class="text-gray-300">|</span>
+            <button id="deselect-all" class="text-xs text-gray-500 hover:text-gray-700 font-medium">取消全选</button>
+          </div>
+        </div>
+        <div id="platform-checkboxes" class="grid grid-cols-3 gap-2">
+          {PLATFORMS.map(p => (
+            <label class="flex items-center gap-2 p-2.5 rounded-xl border border-gray-200 hover:border-purple-300 cursor-pointer transition-all has-[:checked]:border-purple-500 has-[:checked]:bg-purple-50">
+              <input type="checkbox" value={p.id} class="platform-cb w-4 h-4 rounded text-purple-600 focus:ring-purple-500" checked>
+              <span class="text-lg">{p.emoji}</span>
+              <span class="text-sm text-gray-700">{p.name}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <!-- 额外要求 -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">额外要求</label>
+        <input id="extra-input" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent" placeholder="风格、字数、特殊要求（选填）">
+      </div>
+
+      <!-- 生成内容类型 -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">生成内容</label>
+        <div class="flex flex-wrap gap-3">
+          <label class="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 cursor-pointer hover:border-purple-300 transition-all has-[:checked]:border-purple-500 has-[:checked]:bg-purple-50">
+            <input type="checkbox" id="type-copy" class="w-4 h-4 rounded text-purple-600 focus:ring-purple-500" checked>
+            <span class="text-sm text-gray-700">✍️ 文案</span>
+          </label>
+          <label class="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 cursor-pointer hover:border-purple-300 transition-all has-[:checked]:border-purple-500 has-[:checked]:bg-purple-50">
+            <input type="checkbox" id="type-image" class="w-4 h-4 rounded text-purple-600 focus:ring-purple-500" checked>
+            <span class="text-sm text-gray-700">🎨 配图提示词</span>
+          </label>
+          <label class="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 cursor-pointer hover:border-purple-300 transition-all has-[:checked]:border-purple-500 has-[:checked]:bg-purple-50">
+            <input type="checkbox" id="type-video" class="w-4 h-4 rounded text-purple-600 focus:ring-purple-500" checked>
+            <span class="text-sm text-gray-700">🎬 视频脚本</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- 生成按钮 -->
+      <button id="generate-btn" class="w-full py-3.5 rounded-xl text-white font-medium text-base bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
+        <span id="btn-text" class="flex items-center gap-2">🚀 一键生成</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 结果区 -->
+  <div id="result-section" class="hidden">
+    <!-- Tab 切换 -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div class="flex border-b border-gray-200">
+        <button class="tab-btn flex-1 py-3 text-sm font-medium transition-all border-b-2 border-purple-600 text-purple-600" data-tab="copy">
+          ✍️ 文案
+        </button>
+        <button class="tab-btn flex-1 py-3 text-sm font-medium transition-all border-b-2 border-transparent text-gray-500 hover:text-gray-700" data-tab="image">
+          🎨 配图
+        </button>
+        <button class="tab-btn flex-1 py-3 text-sm font-medium transition-all border-b-2 border-transparent text-gray-500 hover:text-gray-700" data-tab="video">
+          🎬 视频
+        </button>
+      </div>
+
+      <!-- 文案 Tab -->
+      <div id="tab-copy" class="tab-panel p-5">
+        <div class="flex flex-col md:flex-row gap-4 min-h-[300px]">
+          <!-- 平台列表 -->
+          <div class="md:w-48 flex md:flex-col gap-2 overflow-x-auto md:overflow-x-visible pb-2 md:pb-0" id="copy-platform-list">
+          </div>
+          <!-- 文案内容 -->
+          <div class="flex-1" id="copy-content-area">
+            <div class="flex items-center justify-between mb-3">
+              <h4 id="copy-current-platform" class="font-semibold text-gray-900"></h4>
+              <button id="copy-text-btn" class="px-3 py-1.5 rounded-lg border border-purple-200 text-purple-600 hover:bg-purple-50 transition-all text-xs font-medium flex items-center gap-1.5">
+                📋 复制文案
+              </button>
+            </div>
+            <div id="copy-text-content" class="whitespace-pre-wrap text-gray-700 text-sm leading-relaxed bg-gray-50 rounded-xl p-4 overflow-y-auto" style="max-height: 500px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 配图 Tab -->
+      <div id="tab-image" class="tab-panel hidden p-5">
+        <div id="image-content" class="space-y-4"></div>
+      </div>
+
+      <!-- 视频 Tab -->
+      <div id="tab-video" class="tab-panel hidden p-5">
+        <div id="video-content" class="space-y-4"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 空状态 -->
+  <div id="empty-state" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 flex flex-col items-center justify-center text-gray-400">
+    <div class="text-6xl mb-4">🚀</div>
+    <p class="text-lg font-medium">批量生成多平台内容</p>
+    <p class="text-sm mt-1">一次输入，同时生成文案 + 配图提示词 + 视频脚本</p>
+  </div>
+</main>
+
+<script>
+  const PLATFORMS = [
+    { id: 'xiaohongshu', name: '小红书', emoji: '📕' },
+    { id: 'zhihu', name: '知乎', emoji: '📘' },
+    { id: 'wechat', name: '微信公众号', emoji: '💬' },
+    { id: 'douyin', name: '抖音', emoji: '🎵' },
+    { id: 'bilibili', name: '哔哩哔哩', emoji: '📺' },
+    { id: 'weibo', name: '微博', emoji: '📢' },
+    { id: 'qywechat', name: '企业微信', emoji: '👥' },
+    { id: 'toutiao', name: '头条号', emoji: '🔥' },
+    { id: 'jike', name: '即刻', emoji: '📌' },
+  ];
+
+  const spinnerSVG = '<svg class="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>';
+
+  let currentCopyPlatform = '';
+  let generatedData: { copy: any[]; image: string; video: string } = { copy: [], image: '', video: '' };
+
+  // 全选/取消全选
+  document.getElementById('select-all')!.addEventListener('click', () => {
+    document.querySelectorAll('.platform-cb').forEach((cb: Element) => {
+      (cb as HTMLInputElement).checked = true;
+    });
+  });
+  document.getElementById('deselect-all')!.addEventListener('click', () => {
+    document.querySelectorAll('.platform-cb').forEach((cb: Element) => {
+      (cb as HTMLInputElement).checked = false;
+    });
+  });
+
+  // 折叠/展开输入区
+  const inputArea = document.getElementById('input-area')!;
+  const toggleIcon = document.getElementById('toggle-icon')!;
+  const toggleText = document.getElementById('toggle-text')!;
+  document.getElementById('toggle-input')!.addEventListener('click', () => {
+    inputArea.classList.toggle('hidden');
+    if (inputArea.classList.contains('hidden')) {
+      toggleIcon.style.transform = 'rotate(180deg)';
+      toggleText.textContent = '展开';
+    } else {
+      toggleIcon.style.transform = 'rotate(0deg)';
+      toggleText.textContent = '收起';
+    }
+  });
+
+  // Tab 切换
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tab = (btn as HTMLElement).dataset.tab;
+      document.querySelectorAll('.tab-btn').forEach(b => {
+        b.classList.remove('border-purple-600', 'text-purple-600');
+        b.classList.add('border-transparent', 'text-gray-500');
+      });
+      btn.classList.add('border-purple-600', 'text-purple-600');
+      btn.classList.remove('border-transparent', 'text-gray-500');
+
+      document.querySelectorAll('.tab-panel').forEach(panel => {
+        panel.classList.add('hidden');
+      });
+      document.getElementById(`tab-${tab}`)!.classList.remove('hidden');
+    });
+  });
+
+  const generateBtn = document.getElementById('generate-btn')!;
+  const btnText = document.getElementById('btn-text')!;
+
+  function setLoading(loading: boolean) {
+    generateBtn.disabled = loading;
+    if (loading) {
+      btnText.innerHTML = spinnerSVG + '<span>生成中...</span>';
+    } else {
+      btnText.innerHTML = '🚀 一键生成';
+    }
+  }
+
+  function getSelectedPlatforms(): string[] {
+    return Array.from(document.querySelectorAll('.platform-cb:checked')).map(
+      (cb: Element) => (cb as HTMLInputElement).value
+    );
+  }
+
+  function getSelectedTypes(): { copy: boolean; image: boolean; video: boolean } {
+    return {
+      copy: (document.getElementById('type-copy') as HTMLInputElement).checked,
+      image: (document.getElementById('type-image') as HTMLInputElement).checked,
+      video: (document.getElementById('type-video') as HTMLInputElement).checked,
+    };
+  }
+
+  async function generate() {
+    const product = (document.getElementById('product-input') as HTMLTextAreaElement).value.trim();
+    if (!product) {
+      alert('请输入产品描述');
+      return;
+    }
+    const platforms = getSelectedPlatforms();
+    if (platforms.length === 0) {
+      alert('请至少选择一个平台');
+      return;
+    }
+    const types = getSelectedTypes();
+    if (!types.copy && !types.image && !types.video) {
+      alert('请至少选择一种生成内容类型');
+      return;
+    }
+    const extra = (document.getElementById('extra-input') as HTMLInputElement).value.trim();
+
+    setLoading(true);
+
+    try {
+      // 构建 API 请求
+      const requests: Promise<Response>[] = [];
+
+      // 文案 + 视频 → batch；文案 → copy；视频 → video
+      if (types.copy && types.video) {
+        requests.push(fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'batch', product, platforms, extra }),
+        }));
+      } else if (types.copy) {
+        requests.push(fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'copy', product, platforms, extra }),
+        }));
+      } else if (types.video) {
+        requests.push(fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'video', product, platforms, extra }),
+        }));
+      }
+
+      // 配图提示词单独请求
+      if (types.image) {
+        requests.push(fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'image', product, platforms, extra }),
+        }));
+      }
+
+      const responses = await Promise.all(requests);
+      const dataList = await Promise.all(responses.map(r => r.json()));
+
+      // 合并结果
+      generatedData = { copy: [], image: '', video: '' };
+      dataList.forEach(data => {
+        if (data.success && data.results) {
+          if (data.results.copy) generatedData.copy = data.results.copy;
+          if (data.results.image) generatedData.image = data.results.image;
+          if (data.results.video) generatedData.video = data.results.video;
+        }
+      });
+
+      // 渲染结果
+      renderResults(product, platforms, types);
+
+      // 保存到 localStorage
+      try {
+        const history = JSON.parse(localStorage.getItem('smart_marketing_history') || '[]');
+        history.push({
+          id: Date.now().toString(),
+          date: new Date().toISOString().slice(0, 10),
+          product,
+          platforms,
+          copy: generatedData.copy,
+          image: generatedData.image || '',
+          video: generatedData.video || '',
+        });
+        localStorage.setItem('smart_marketing_history', JSON.stringify(history));
+      } catch (e) {
+        console.error('保存历史失败', e);
+      }
+
+    } catch (e) {
+      alert('网络错误，请重试');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function renderResults(product: string, platforms: string[], types: { copy: boolean; image: boolean; video: boolean }) {
+    document.getElementById('empty-state')!.classList.add('hidden');
+    document.getElementById('result-section')!.classList.remove('hidden');
+
+    // 渲染文案 Tab
+    if (types.copy && generatedData.copy.length > 0) {
+      const listEl = document.getElementById('copy-platform-list')!;
+      listEl.innerHTML = '';
+      generatedData.copy.forEach((item, idx) => {
+        const platformInfo = PLATFORMS.find(p => p.id === item.platform);
+        const btn = document.createElement('button');
+        btn.className = `copy-platform-btn flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-medium transition-all whitespace-nowrap ${
+          idx === 0 ? 'border-purple-500 bg-purple-50 text-purple-700' : 'border-gray-200 text-gray-600 hover:border-purple-300'
+        }`;
+        btn.dataset.platform = item.platform;
+        btn.innerHTML = `<span>${platformInfo?.emoji || '📄'}</span><span>${platformInfo?.name || item.platform}</span>`;
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.copy-platform-btn').forEach(b => {
+            b.classList.remove('border-purple-500', 'bg-purple-50', 'text-purple-700');
+            b.classList.add('border-gray-200', 'text-gray-600');
+          });
+          btn.classList.add('border-purple-500', 'bg-purple-50', 'text-purple-700');
+          btn.classList.remove('border-gray-200', 'text-gray-600');
+          showCopyContent(item);
+        });
+        listEl.appendChild(btn);
+      });
+      showCopyContent(generatedData.copy[0]);
+    }
+
+    // 渲染配图 Tab
+    if (types.image && generatedData.image) {
+      renderImageTab(generatedData.image);
+    }
+
+    // 渲染视频 Tab
+    if (types.video && generatedData.video) {
+      renderVideoTab(generatedData.video);
+    }
+  }
+
+  function showCopyContent(item: any) {
+    currentCopyPlatform = item.platform;
+    const platformInfo = PLATFORMS.find(p => p.id === item.platform);
+    document.getElementById('copy-current-platform')!.textContent =
+      `${platformInfo?.emoji || ''} ${platformInfo?.name || item.platform}`;
+    document.getElementById('copy-text-content')!.textContent = item.content;
+  }
+
+  function renderImageTab(imageText: string) {
+    const container = document.getElementById('image-content')!;
+    container.innerHTML = '';
+
+    // 尝试按编号分割提示词
+    const lines = imageText.split('\n');
+    const blocks: { title: string; content: string }[] = [];
+    let currentBlock: { title: string; content: string } | null = null;
+
+    lines.forEach(line => {
+      const match = line.match(/^(\d+)\.\s*(.*)/);
+      if (match) {
+        if (currentBlock) blocks.push(currentBlock);
+        currentBlock = { title: match[2] || `提示词 ${match[1]}`, content: '' };
+      } else if (currentBlock) {
+        currentBlock.content += (currentBlock.content ? '\n' : '') + line;
+      } else {
+        // 没有编号前缀的行，作为第一个 block
+        if (line.trim()) {
+          if (!currentBlock) currentBlock = { title: '配图提示词', content: '' };
+          currentBlock.content += (currentBlock.content ? '\n' : '') + line;
+        }
+      }
+    });
+    if (currentBlock) blocks.push(currentBlock);
+
+    if (blocks.length === 0) {
+      blocks.push({ title: '配图提示词', content: imageText });
+    }
+
+    blocks.forEach(block => {
+      const card = document.createElement('div');
+      card.className = 'bg-gray-50 rounded-xl p-4 border border-gray-100';
+      card.innerHTML = `
+        <div class="flex items-center justify-between mb-2">
+          <h4 class="font-medium text-gray-900 text-sm">${block.title}</h4>
+          <button class="image-copy-btn px-3 py-1 rounded-lg border border-purple-200 text-purple-600 hover:bg-purple-50 transition-all text-xs font-medium flex items-center gap-1">
+            📋 复制提示词
+          </button>
+        </div>
+        <div class="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">${escapeHtml(block.content.trim())}</div>
+      `;
+      const copyBtn = card.querySelector('.image-copy-btn')!;
+      copyBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(block.content.trim()).then(() => {
+          const original = copyBtn.innerHTML;
+          copyBtn.innerHTML = '✅ 已复制';
+          setTimeout(() => { copyBtn.innerHTML = original; }, 2000);
+        }).catch(() => alert('复制失败'));
+      });
+      container.appendChild(card);
+    });
+  }
+
+  function renderVideoTab(videoText: string) {
+    const container = document.getElementById('video-content')!;
+    container.innerHTML = `
+      <div class="bg-gray-50 rounded-xl p-4 border border-gray-100">
+        <div class="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap mb-4" style="max-height: 500px; overflow-y: auto;">${escapeHtml(videoText)}</div>
+        <div class="flex gap-3">
+          <button id="video-copy-btn" class="flex-1 py-2.5 rounded-xl border border-purple-200 text-purple-600 hover:bg-purple-50 transition-all text-sm font-medium flex items-center justify-center gap-2">
+            📋 复制脚本
+          </button>
+          <a href="https://jimeng.jianying.com/ai-tool/image/generate" target="_blank" rel="noopener" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700 transition-all text-sm font-medium flex items-center justify-center gap-2">
+            🎨 打开即梦AI
+          </a>
+        </div>
+      </div>
+    `;
+    document.getElementById('video-copy-btn')!.addEventListener('click', () => {
+      navigator.clipboard.writeText(videoText).then(() => {
+        const btn = document.getElementById('video-copy-btn')!;
+        const original = btn.innerHTML;
+        btn.innerHTML = '✅ 已复制';
+        setTimeout(() => { btn.innerHTML = original; }, 2000);
+      }).catch(() => alert('复制失败'));
+    });
+  }
+
+  function escapeHtml(text: string): string {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  generateBtn.addEventListener('click', generate);
+
+  // 文案复制按钮
+  document.getElementById('copy-text-btn')!.addEventListener('click', () => {
+    const content = document.getElementById('copy-text-content')!.textContent || '';
+    if (content) {
+      navigator.clipboard.writeText(content).then(() => {
+        const btn = document.getElementById('copy-text-btn')!;
+        const original = btn.innerHTML;
+        btn.innerHTML = '✅ 已复制';
+        setTimeout(() => { btn.innerHTML = original; }, 2000);
+      }).catch(() => alert('复制失败'));
+    }
+  });
+</script>
+</Base>
