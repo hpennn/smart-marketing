@@ -44,6 +44,16 @@ import Base from '../layouts/Base.astro';
     </div>
   </div>
 
+  <!-- 新内容到达提示 -->
+  <div id="new-content-banner" class="hidden bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 mb-5 flex items-center gap-3">
+    <span class="text-xl">🎉</span>
+    <div class="flex-1">
+      <p class="text-sm font-semibold text-green-800">新内容已就绪！</p>
+      <p class="text-xs text-green-600 mt-0.5">刚刚从批量推广生成的内容已保存在下方</p>
+    </div>
+    <button onclick="document.getElementById('new-content-banner').classList.add('hidden')" class="text-green-600 hover:text-green-800 text-lg font-bold">✕</button>
+  </div>
+
   <!-- 内容列表 -->
   <div id="history-list" class="space-y-4"></div>
 
@@ -447,5 +457,21 @@ import Base from '../layouts/Base.astro';
   }
 
   renderHistory();
+
+  // 检测是否有刚生成的新内容（2分钟内）
+  (function checkNewContent() {
+    const history = loadHistory();
+    if (history.length === 0) return;
+    const latest = history[history.length - 1];
+    // 检查历史记录是否有 id（时间戳）
+    if (latest.id) {
+      const age = Date.now() - parseInt(latest.id);
+      if (age < 2 * 60 * 1000 && age > 0) {
+        document.getElementById('new-content-banner')!.classList.remove('hidden');
+        // 滚动到列表顶部
+        document.getElementById('history-list')!.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  })();
 </script>
 </Base>

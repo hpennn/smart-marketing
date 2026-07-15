@@ -67,6 +67,9 @@ const PLATFORMS = [
               🔄 重新生成
             </button>
           </div>
+          <button id="to-batch-btn" class="w-full mt-3 py-3 rounded-xl text-white font-medium bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 transition-all text-sm flex items-center justify-center gap-2 shadow-sm">
+            🚀 发送到批量推广
+          </button>
         </div>
 
         <!-- 错误状态 -->
@@ -222,6 +225,20 @@ const PLATFORMS = [
         alert('复制失败，请手动复制');
       });
     }
+  });
+
+  // 发送到批量推广
+  document.getElementById('to-batch-btn')!.addEventListener('click', () => {
+    if (!lastResult || !lastProduct) return;
+    try {
+      localStorage.setItem('sm_pending_generate', JSON.stringify({
+        product: lastProduct,
+        extra: lastExtra,
+        sourcePlatform: selectedPlatform,
+        timestamp: Date.now(),
+      }));
+    } catch (e) { console.error(e); }
+    window.location.href = '/generate?from=copy';
   });
 </script>
 </Base>

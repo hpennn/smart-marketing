@@ -16,6 +16,16 @@ const PLATFORMS = [
 
 <Base title="批量推广" active="generate">
 <main class="max-w-6xl mx-auto px-4 py-8">
+  <!-- 来自文案生成的提示横幅 -->
+  <div id="from-copy-banner" class="hidden bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 mb-5 flex items-center gap-3">
+    <span class="text-xl">✅</span>
+    <div class="flex-1">
+      <p class="text-sm font-semibold text-green-800">已从「文案生成」导入产品信息</p>
+      <p class="text-xs text-green-600 mt-0.5" id="from-copy-info"></p>
+    </div>
+    <button id="close-from-banner" class="text-green-600 hover:text-green-800 text-lg font-bold">✕</button>
+  </div>
+
   <!-- 顶部输入区 -->
   <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 mb-6">
     <div class="flex items-center justify-between mb-4">
@@ -130,6 +140,16 @@ const PLATFORMS = [
       <div id="tab-video" class="tab-panel hidden p-5">
         <div id="video-content" class="space-y-4"></div>
       </div>
+    </div>
+
+    <!-- 去发布管理 -->
+    <div class="mt-5 flex gap-3">
+      <a href="/publish" class="flex-1 py-3.5 rounded-xl text-white font-medium bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 transition-all text-sm flex items-center justify-center gap-2 shadow-sm text-center">
+        📤 去发布管理 · 一键发布到平台
+      </a>
+      <button id="continue-gen-btn" class="px-5 py-3.5 rounded-xl border border-purple-200 text-purple-600 hover:bg-purple-50 transition-all text-sm font-medium flex items-center justify-center gap-2">
+        🔄 继续生成
+      </button>
     </div>
   </div>
 
@@ -471,6 +491,65 @@ const PLATFORMS = [
         setTimeout(() => { btn.innerHTML = original; }, 2000);
       }).catch(() => alert('复制失败'));
     }
+  });
+
+  // ===== 来自文案生成页的数据接收 =====
+  (function checkPendingData() {
+    try {
+      const pendingStr = localStorage.getItem('sm_pending_generate');
+      if (!pendingStr) return;
+      const pending = JSON.parse(pendingStr);
+      // 检查是否在5分钟内（过期则忽略）
+      if (Date.now() - pending.timestamp > 5 * 60 * 1000) {
+        localStorage.removeItem('sm_pending_generate');
+        return;
+      }
+
+      // 填充产品描述
+      const productInput = document.getElementById('product-input') as HTMLTextAreaElement;
+      if (pending.product) {
+        productInput.value = pending.product;
+      }
+      // 填充额外要求
+      if (pending.extra) {
+        const extraInput = document.getElementById('extra-input') as HTMLInputElement;
+        extraInput.value = pending.extra;
+      }
+      // 预选来源平台
+      if (pending.sourcePlatform) {
+        const cb = document.querySelector(`.platform-cb[value="${pending.sourcePlatform}"]`) as HTMLInputElement;
+        if (cb) {
+          document.querySelectorAll('.platform-cb').forEach((c: Element) => { (c as HTMLInputElement).checked = false; });
+          cb.checked = true;
+        }
+      }
+
+      // 显示来源横幅
+      const banner = document.getElementById('from-copy-banner')!;
+      const info = document.getElementById('from-copy-info')!;
+      banner.classList.remove('hidden');
+      const platformInfo = PLATFORMS.find(p => p.id === pending.sourcePlatform);
+      info.textContent = `产品：${pending.product.slice(0, 30)}${pending.product.length > 30 ? '...' : ''}${platformInfo ? ' · 来自 ' + platformInfo.emoji + platformInfo.name : ''}`;
+
+      // 清除待处理数据
+      localStorage.removeItem('sm_pending_generate');
+
+      // 关闭横幅
+      document.getElementById('close-from-banner')!.addEventListener('click', () => {
+        banner.classList.add('hidden');
+      });
+    } catch (e) {
+      console.error('读取待处理数据失败', e);
+    }
+  })();
+
+  // 继续生成按钮（回到输入区）
+  document.getElementById('continue-gen-btn')!.addEventListener('click', () => {
+    const inputArea = document.getElementById('input-area')!;
+    inputArea.classList.remove('hidden');
+    document.getElementById('toggle-icon')!.style.transform = 'rotate(0deg)';
+    document.getElementById('toggle-text')!.textContent = '收起';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 </script>
 </Base>
