@@ -11,11 +11,37 @@ import Base from '../layouts/Base.astro';
   </div>
 
   <!-- 油猴脚本安装提示 -->
-  <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-4 mb-6 text-sm text-indigo-800">
+  <div id="userscript-banner" class="bg-indigo-50 border border-indigo-200 rounded-xl p-4 mb-6 text-sm text-indigo-800 flex items-center gap-2 flex-wrap">
     💡 <strong>自动填写</strong>需要安装油猴脚本。
-    <a href="https://www.tampermonkey.net/" target="_blank" class="text-indigo-700 underline">安装 Tampermonkey</a>
-    → 然后安装
-    <a href="/auto-fill.user.js" class="text-indigo-700 underline font-semibold">智能营销一键填写脚本</a>
+    <a href="https://www.tampermonkey.net/" target="_blank" class="text-indigo-700 underline">① 安装 Tampermonkey</a>
+    →
+    <a href="https://github.com/hpennn/smart-marketing/raw/main/auto-fill.user.js" target="_blank" class="text-indigo-700 underline font-semibold">② 安装一键填写脚本</a>
+    <button onclick="document.getElementById('userscript-banner').style.display='none';localStorage.setItem('sm_hide_banner','1')" class="ml-auto bg-transparent border-none text-indigo-700 cursor-pointer text-lg leading-none">✕</button>
+  </div>
+
+  <!-- 油猴脚本安装引导弹窗 -->
+  <div id="install-modal" style="display:none" class="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center">
+    <div class="bg-white rounded-2xl p-7 max-w-[420px] w-[90%] shadow-2xl">
+      <h3 class="text-lg font-bold text-gray-900 mb-4">🐒 安装油猴脚本，启用自动填写</h3>
+      <div class="bg-gray-50 rounded-xl p-4 mb-4 space-y-3">
+        <div class="flex items-start gap-3">
+          <span class="w-6 h-6 rounded-full bg-purple-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>
+          <div>安装 Tampermonkey 浏览器扩展<br><a href="https://www.tampermonkey.net/" target="_blank" class="text-purple-600 text-sm">👉 点击安装 tampermonkey.net</a></div>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="w-6 h-6 rounded-full bg-purple-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>
+          <div>安装一键填写脚本<br><a href="https://github.com/hpennn/smart-marketing/raw/main/auto-fill.user.js" target="_blank" class="text-purple-600 text-sm">👉 点击安装脚本</a></div>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="w-6 h-6 rounded-full bg-purple-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">3</span>
+          <div>完成后回来点击「一键填写」即可自动填入 ✨</div>
+        </div>
+      </div>
+      <div class="flex gap-3">
+        <button onclick="closeInstallModal()" class="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-500 text-sm cursor-pointer">我知道了</button>
+        <button onclick="closeInstallModal(true)" class="flex-1 py-2.5 rounded-xl border-none bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-sm font-semibold cursor-pointer">不再提示</button>
+      </div>
+    </div>
   </div>
 
   <!-- 内容列表 -->
@@ -394,6 +420,30 @@ import Base from '../layouts/Base.astro';
         renderHistory();
       });
     });
+  }
+
+  // 油猴脚本弹窗
+  function showInstallModal() {
+    document.getElementById('install-modal')!.style.display = 'flex';
+  }
+  function closeInstallModal(dontShowAgain?: boolean) {
+    document.getElementById('install-modal')!.style.display = 'none';
+    if (dontShowAgain) localStorage.setItem('sm_script_installed', '1');
+  }
+  // 首次点击一键填写时弹窗提示
+  document.querySelectorAll('.pub-oneclick-btn').forEach(btn => {
+    const origClick = btn.onclick;
+    btn.addEventListener('click', (e) => {
+      if (!localStorage.getItem('sm_script_installed')) {
+        const platformKey = (btn as HTMLElement).dataset.platformKey || '';
+        if (platformKey !== 'weibo') showInstallModal();
+      }
+    }, true);
+  });
+  // 恢复 banner 关闭状态
+  if (localStorage.getItem('sm_hide_banner') === '1') {
+    const b = document.getElementById('userscript-banner');
+    if (b) b.style.display = 'none';
   }
 
   renderHistory();
