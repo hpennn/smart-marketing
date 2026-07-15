@@ -10,6 +10,14 @@ import Base from '../layouts/Base.astro';
     <p class="text-sm text-purple-700">从「<a href="/copy" class="font-medium underline">文案生成</a>」或「<a href="/generate" class="font-medium underline">批量推广</a>」生成的内容会自动保存在这里</p>
   </div>
 
+  <!-- 油猴脚本安装提示 -->
+  <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-4 mb-6 text-sm text-indigo-800">
+    💡 <strong>自动填写</strong>需要安装油猴脚本。
+    <a href="https://www.tampermonkey.net/" target="_blank" class="text-indigo-700 underline">安装 Tampermonkey</a>
+    → 然后安装
+    <a href="/auto-fill.user.js" class="text-indigo-700 underline font-semibold">智能营销一键填写脚本</a>
+  </div>
+
   <!-- 内容列表 -->
   <div id="history-list" class="space-y-4"></div>
 
@@ -33,63 +41,58 @@ import Base from '../layouts/Base.astro';
 </main>
 
 <script>
-  function publishToPlatform(content: string, platformKey: string) {
+  function oneClickFill(title: string, content: string, platformKey: string) {
     const PLATFORM_URLS: Record<string, string> = {
       xiaohongshu: 'https://creator.xiaohongshu.com/publish/publish',
       zhihu: 'https://www.zhihu.com/creator',
       wechat: 'https://mp.weixin.qq.com/',
       douyin: 'https://creator.douyin.com/creator-micro/content/upload',
-      bilibili: 'https://member.bilibili.com/platform/upload/text',
-      weibo: 'https://weibo.com',
-      toutiao: 'https://mp.toutiao.com/',
+      bilibili: 'https://member.bilibili.com/platform/upload-text',
+      weibo: 'https://service.weibo.com/share/share.php',
+      toutiao: 'https://mp.toutiao.com/profile_v4/graphic/publish',
       jike: 'https://web.okjike.com/',
       qywechat: 'https://work.weixin.qq.com/'
     };
+    const url = PLATFORM_URLS[platformKey];
+    if (!url) { showToast('❌ 未找到平台'); return; }
 
-    // 写入剪贴板
-    const writeClipboard = (text: string): Promise<void> => {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        return navigator.clipboard.writeText(text);
-      }
-      // fallback: textarea + execCommand
-      return new Promise((resolve, reject) => {
-        const ta = document.createElement('textarea');
-        ta.value = text;
-        ta.style.position = 'fixed';
-        ta.style.left = '-9999px';
-        document.body.appendChild(ta);
-        ta.select();
-        try {
-          document.execCommand('copy');
-          resolve();
-        } catch (e) {
-          reject(e);
-        } finally {
-          document.body.removeChild(ta);
-        }
-      });
-    };
+    // 复制到剪贴板（备份）
+    navigator.clipboard.writeText(content).catch(() => {});
 
-    writeClipboard(content).then(() => {
-      // 打开平台发布页
-      const url = PLATFORM_URLS[platformKey];
-      if (url) {
-        window.open(url, '_blank');
-      }
-      // 显示 toast
-      const toast = document.getElementById('publish-toast');
-      if (toast) {
-        toast.textContent = '✅ 内容已复制，在打开的页面按 Ctrl+V 粘贴';
-        toast.classList.remove('opacity-0');
-        toast.classList.add('opacity-100');
-        setTimeout(() => {
-          toast.classList.remove('opacity-100');
-          toast.classList.add('opacity-0');
-        }, 3000);
-      }
-    }).catch(() => {
-      alert('复制失败，请手动复制内容后前往平台发布');
-    });
+    // 微博特殊处理：原生支持URL参数
+    if (platformKey === 'weibo') {
+      const shareUrl = url + '?title=' + encodeURIComponent((title ? title + '\n\n' : '') + content);
+      window.open(shareUrl, '_blank');
+      showToast('✅ 微博内容已预填');
+      return;
+    }
+
+    // 其他平台：通过URL hash + 油猴脚本
+    const payload = JSON.stringify({ title: title || '', content: content });
+    const fullUrl = url + '#smfill=' + encodeURIComponent(payload);
+
+    if (fullUrl.length > 1800) {
+      // 内容过长，降级为复制+打开
+      window.open(url, '_blank');
+      showToast('📋 内容过长已复制，请在平台页面 Ctrl+V 粘贴');
+      return;
+    }
+
+    window.open(fullUrl, '_blank');
+    showToast('✅ 正在打开平台，内容将自动填入（需安装油猴脚本）');
+  }
+
+  function showToast(msg: string) {
+    const toast = document.getElementById('publish-toast');
+    if (toast) {
+      toast.textContent = msg;
+      toast.classList.remove('opacity-0');
+      toast.classList.add('opacity-100');
+      setTimeout(() => {
+        toast.classList.remove('opacity-100');
+        toast.classList.add('opacity-0');
+      }, 3000);
+    }
   }
 
   const PLATFORMS: Record<string, { name: string; emoji: string }> = {
@@ -213,7 +216,7 @@ import Base from '../layouts/Base.astro';
                     📋 复制
                   </button>
                   <button class="pub-oneclick-btn px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg text-sm font-medium hover:opacity-90 transition" data-card-index="${index}" data-copy-sub="${ci}" data-platform-key="${c.platform}">
-                    ⚡ 一键发布
+                    ⚡ 一键填写
                   </button>
                 </div>
               </div>
@@ -227,7 +230,7 @@ import Base from '../layouts/Base.astro';
               <div class="flex items-center gap-2">
                 <button class="pub-copy-btn px-3 py-1.5 rounded-lg border border-purple-200 text-purple-600 hover:bg-purple-50 transition-all text-xs font-medium" data-card-index="${index}" data-copy-type="image">📋 复制提示词</button>
                 <button class="pub-oneclick-btn px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg text-sm font-medium hover:opacity-90 transition" data-card-index="${index}" data-copy-type="image" data-platform-key="xiaohongshu">
-                  ⚡ 一键发布到小红书
+                  ⚡ 一键填写到小红书
                 </button>
               </div>
             </div>
@@ -238,7 +241,7 @@ import Base from '../layouts/Base.astro';
               <div class="flex items-center gap-2">
                 <button class="pub-copy-btn px-3 py-1.5 rounded-lg border border-purple-200 text-purple-600 hover:bg-purple-50 transition-all text-xs font-medium" data-card-index="${index}" data-copy-type="video">📋 复制脚本</button>
                 <button class="pub-oneclick-btn px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg text-sm font-medium hover:opacity-90 transition" data-card-index="${index}" data-copy-type="video" data-platform-key="douyin">
-                  ⚡ 一键发布到抖音
+                  ⚡ 一键填写到抖音
                 </button>
               </div>
             </div>
@@ -344,7 +347,7 @@ import Base from '../layouts/Base.astro';
       });
     });
 
-    // 绑定一键发布按钮
+    // 绑定一键填写按钮
     document.querySelectorAll('.pub-oneclick-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const el = btn as HTMLElement;
@@ -353,25 +356,29 @@ import Base from '../layouts/Base.astro';
         const copySub = el.dataset.copySub;
         const copyType = el.dataset.copyType;
 
+        let title = '';
         let content = '';
         const item = historyCache[cardIndex];
         if (!item) return;
 
         if (copyType === 'image') {
+          title = item.product || '';
           content = item.image || '';
         } else if (copyType === 'video') {
+          title = item.product || '';
           content = item.video || '';
         } else if (copySub !== undefined) {
+          title = item.copy?.[parseInt(copySub)]?.title || item.product || '';
           content = item.copy?.[parseInt(copySub)]?.content || '';
         }
 
         if (!content) return;
 
-        publishToPlatform(content, platformKey);
+        oneClickFill(title, content, platformKey);
 
         // 按钮短暂反馈
         const original = btn.innerHTML;
-        btn.innerHTML = '✅ 已复制';
+        btn.innerHTML = '✅ 已打开';
         setTimeout(() => { btn.innerHTML = original; }, 2000);
       });
     });
