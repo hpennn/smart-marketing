@@ -9,318 +9,124 @@ const { title, active = '' } = Astro.props;
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{title} - 智能营销</title>
   <meta name="description" content="AI驱动的一站式智能营销平台，支持多平台文案生成、批量推广、内容发布管理" />
-
-  <!-- PWA -->
-  <meta name="theme-color" content="#8B4DFF" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="智能营销" />
   <link rel="manifest" href="/manifest.json" />
-  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
-  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
+  <meta name="theme-color" content="#7c3aed" />
+  <!-- 百度统计 -->
+  <script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?BAIDU_STATS_ID";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+  </script>
 </head>
 <body class="bg-gray-50 min-h-screen" data-active={active}>
 
-  <!-- ===== Top Bar (compact) ===== -->
-  <header class="app-topbar">
-    <span class="app-logo">🚀 智能营销</span>
-  </header>
+  <!-- 左侧导航栏（桌面端） -->
+  <aside class="hidden md:flex fixed left-0 top-0 bottom-0 w-60 bg-white border-r border-gray-200 flex-col z-40">
+    <!-- Logo -->
+    <div class="h-16 flex items-center px-6 border-b border-gray-100">
+      <a href="/" class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600 flex items-center gap-2">
+        🚀 智能营销
+      </a>
+    </div>
+    <!-- 导航菜单 -->
+    <nav class="flex-1 py-4 px-3 space-y-1">
+      <a href="/" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all" data-nav="home">
+        <span class="text-lg">🏠</span>
+        <span>首页</span>
+      </a>
+      <a href="/copy" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all" data-nav="copy">
+        <span class="text-lg">✍️</span>
+        <span>文案生成</span>
+      </a>
+      <a href="/generate" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all" data-nav="generate">
+        <span class="text-lg">🚀</span>
+        <span>批量推广</span>
+      </a>
+      <a href="/publish" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all" data-nav="publish">
+        <span class="text-lg">📢</span>
+        <span>发布管理</span>
+      </a>
+    </nav>
+    <!-- 底部信息 -->
+    <div class="px-6 py-4 border-t border-gray-100">
+      <p class="text-xs text-gray-400">AI 驱动 · 多平台营销</p>
+    </div>
+  </aside>
 
-  <!-- ===== Content ===== -->
-  <slot />
+  <!-- 主内容区 -->
+  <div class="md:ml-60 pb-16 md:pb-0">
+    <!-- 移动端顶部导航栏 -->
+    <header class="md:hidden bg-white border-b border-gray-200 sticky top-0 z-30">
+      <div class="px-4 h-14 flex items-center justify-center">
+        <span class="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600">
+          🚀 {title}
+        </span>
+      </div>
+    </header>
 
-  <!-- ===== Bottom Tab Bar ===== -->
-  <nav class="app-tabbar">
-    <a href="/" class="tab-item" data-nav="home">
-      <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-      <span>首页</span>
-    </a>
-    <a href="/copy" class="tab-item" data-nav="copy">
-      <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-      <span>文案</span>
-    </a>
-    <a href="/generate" class="tab-item" data-nav="generate">
-      <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-      <span>批量</span>
-    </a>
-    <a href="/publish" class="tab-item" data-nav="publish">
-      <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-      <span>发布</span>
-    </a>
+    <!-- 页面内容 -->
+    <slot />
+  </div>
+
+  <!-- 底部 Tab 导航（移动端 PWA 风格） -->
+  <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 safe-bottom">
+    <div class="flex items-center justify-around h-16">
+      <a href="/" class="tab-bar-link flex flex-col items-center justify-center flex-1 h-full py-1" data-nav="home">
+        <span class="text-xl mb-0.5">🏠</span>
+        <span class="text-[10px] font-medium">首页</span>
+      </a>
+      <a href="/copy" class="tab-bar-link flex flex-col items-center justify-center flex-1 h-full py-1" data-nav="copy">
+        <span class="text-xl mb-0.5">✍️</span>
+        <span class="text-[10px] font-medium">文案</span>
+      </a>
+      <a href="/generate" class="tab-bar-link flex flex-col items-center justify-center flex-1 h-full py-1" data-nav="generate">
+        <span class="text-xl mb-0.5">🚀</span>
+        <span class="text-[10px] font-medium">推广</span>
+      </a>
+      <a href="/publish" class="tab-bar-link flex flex-col items-center justify-center flex-1 h-full py-1" data-nav="publish">
+        <span class="text-xl mb-0.5">📢</span>
+        <span class="text-[10px] font-medium">发布</span>
+      </a>
+    </div>
   </nav>
 
-  <!-- ===== Install Prompt Banner ===== -->
-  <div id="install-prompt" class="install-prompt" style="display:none">
-    <div class="install-prompt-inner">
-      <span class="text-2xl">📲</span>
-      <div class="flex-1">
-        <p class="text-sm font-medium text-gray-900">安装到桌面</p>
-        <p class="text-xs text-gray-500">像 App 一样使用，更快更方便</p>
-      </div>
-      <button id="install-btn" class="px-4 py-1.5 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-sm font-medium whitespace-nowrap">安装</button>
-      <button id="install-close" class="text-gray-400 text-lg leading-none ml-2">×</button>
-    </div>
-  </div>
-
-  <!-- ===== iOS Install Guide ===== -->
-  <div id="ios-guide" class="ios-guide-overlay" style="display:none">
-    <div class="ios-guide-card">
-      <div class="text-5xl mb-4">📲</div>
-      <h3 class="text-lg font-bold text-gray-900 mb-3">安装到主屏幕</h3>
-      <div class="text-left text-sm text-gray-600 space-y-2 mb-5">
-        <p>1. 点击底部 <span class="text-lg align-middle">⎙</span> 分享按钮</p>
-        <p>2. 向下滑找到「添加到主屏幕」</p>
-        <p>3. 点击右上角「添加」即可</p>
-      </div>
-      <button onclick="document.getElementById('ios-guide').style.display='none'" class="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-medium">我知道了</button>
-    </div>
-  </div>
-
   <script is:inline>
-    // ========== Active tab highlight ==========
-    const active = document.body.getAttribute('data-active') || '';
-    document.querySelectorAll('.tab-item').forEach(link => {
-      if (link.dataset.nav === active) link.classList.add('active');
-    });
-
-    // ========== Install Prompt ==========
-    let deferredPrompt: any = null;
-
-    // Show install button for supported browsers
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      const el = document.getElementById('install-prompt');
-      if (el) el.style.display = 'block';
-    });
-
-    // Install button click
-    document.getElementById('install-btn')?.addEventListener('click', async () => {
-      if (!deferredPrompt) return;
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      deferredPrompt = null;
-      document.getElementById('install-prompt')!.style.display = 'none';
-    });
-
-    // Close install prompt
-    document.getElementById('install-close')?.addEventListener('click', () => {
-      document.getElementById('install-prompt')!.style.display = 'none';
-    });
-
-    // iOS: show install guide
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-    if (isIOS && !isStandalone) {
-      const dismissed = sessionStorage.getItem('ios_guide_dismissed');
-      if (!dismissed) {
-        setTimeout(() => {
-          const guide = document.getElementById('ios-guide');
-          if (guide) guide.style.display = 'flex';
-        }, 2000);
-      }
-    }
-
-    // Dismiss iOS guide
-    document.getElementById('ios-guide')?.addEventListener('click', (e) => {
-      if ((e.target as HTMLElement).id === 'ios-guide') {
-        (e.target as HTMLElement).style.display = 'none';
-        sessionStorage.setItem('ios_guide_dismissed', '1');
+    // Highlight active nav - sidebar
+    var active = document.body.getAttribute('data-active') || '';
+    document.querySelectorAll('.sidebar-link').forEach(function(link) {
+      if (link.dataset.nav === active) {
+        link.classList.add('bg-purple-50', 'text-purple-700');
+      } else {
+        link.classList.add('text-gray-600', 'hover:bg-gray-50');
       }
     });
+    // Highlight active nav - bottom tab bar
+    document.querySelectorAll('.tab-bar-link').forEach(function(link) {
+      if (link.dataset.nav === active) {
+        link.classList.add('text-purple-600');
+      } else {
+        link.classList.add('text-gray-400');
+      }
+    });
+  </script>
 
-    // ========== Service Worker ==========
+  <!-- 注册 Service Worker -->
+  <script is:inline>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => {});
+      navigator.serviceWorker.register('/sw.js').catch(function(){});
     }
-
-    // ========== 工作流自动生成检查 ==========
-    (async function checkWorkflowAutoGen() {
-      // 首页的工作流区自己处理自动生成
-      if (active === 'home' || active === 'workflow') return;
-
-      const FREQ_MS = { daily: 86400000, '2days': 172800000, weekly: 604800000 };
-      let wfs;
-      try { wfs = JSON.parse(localStorage.getItem('smart_marketing_workflows') || '[]'); } catch { return; }
-      if (!wfs.length) return;
-
-      const pending = wfs.filter(wf => {
-        if (!wf.enabled || wf.frequency === 'manual') return false;
-        if (!wf.lastGenerated) return true;
-        return (Date.now() - wf.lastGenerated) >= (FREQ_MS[wf.frequency] || 86400000);
-      });
-      if (!pending.length) return;
-
-      for (const wf of pending) {
-        try {
-          const hasMulti = (wf.types.copy ? 1 : 0) + (wf.types.image ? 1 : 0) + (wf.types.video ? 1 : 0) > 1;
-          const type = hasMulti ? 'batch' : (wf.types.copy ? 'copy' : (wf.types.image ? 'image' : 'video'));
-
-          const res = await fetch('/api/generate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ type, product: wf.description, platforms: wf.platforms, extra: wf.extra || '' }),
-          });
-          const data = await res.json();
-          if (!data.success) continue;
-
-          const entry: any = { id: Date.now().toString(), date: new Date().toLocaleDateString('zh-CN'), product: wf.product, platforms: wf.platforms };
-          if (data.results.copy) entry.copy = data.results.copy;
-          if (data.results.image) entry.image = data.results.image;
-          if (data.results.video) entry.video = data.results.video;
-
-          const history = JSON.parse(localStorage.getItem('smart_marketing_history') || '[]');
-          history.push(entry);
-          localStorage.setItem('smart_marketing_history', JSON.stringify(history));
-
-          const updatedWfs = JSON.parse(localStorage.getItem('smart_marketing_workflows') || '[]');
-          const idx = updatedWfs.findIndex((w: any) => w.id === wf.id);
-          if (idx >= 0) { updatedWfs[idx].lastGenerated = Date.now(); localStorage.setItem('smart_marketing_workflows', JSON.stringify(updatedWfs)); }
-
-          await new Promise(r => setTimeout(r, 1000));
-        } catch (e) { console.error('[工作流] 自动生成失败:', e); }
-      }
-    })();
   </script>
 </body>
 </html>
 
 <style is:inline>
-  /* ========== App-like Global Styles ========== */
-  html {
-    -webkit-text-size-adjust: 100%;
-    -webkit-tap-highlight-color: transparent;
-  }
-  body {
-    padding-top: calc(48px + env(safe-area-inset-top, 0px));
-    padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px));
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    overscroll-behavior: none;
-  }
-  /* Hide scrollbar */
-  ::-webkit-scrollbar { width: 0; height: 0; }
-  html { scrollbar-width: none; }
-
-  /* ========== Top Bar ========== */
-  .app-topbar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 100;
-    height: calc(48px + env(safe-area-inset-top, 0px));
-    padding-top: env(safe-area-inset-top, 0px);
-    background: rgba(255,255,255,0.85);
-    backdrop-filter: saturate(180%) blur(20px);
-    -webkit-backdrop-filter: saturate(180%) blur(20px);
-    border-bottom: 0.5px solid rgba(0,0,0,0.08);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding-left: 16px;
-    padding-right: 16px;
-  }
-  .app-logo {
-    font-size: 17px;
-    font-weight: 700;
-    background: linear-gradient(135deg, #8B4DFF, #6366F1);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  /* ========== Bottom Tab Bar ========== */
-  .app-tabbar {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 100;
-    height: calc(60px + env(safe-area-inset-bottom, 0px));
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-    background: rgba(255,255,255,0.92);
-    backdrop-filter: saturate(180%) blur(20px);
-    -webkit-backdrop-filter: saturate(180%) blur(20px);
-    border-top: 0.5px solid rgba(0,0,0,0.08);
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-around;
-    padding-top: 6px;
-  }
-  .tab-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    text-decoration: none;
-    color: #8E8E93;
-    font-size: 10px;
-    transition: color 0.2s;
-    -webkit-tap-highlight-color: transparent;
-    padding: 2px 12px;
-    min-width: 52px;
-  }
-  .tab-item.active { color: #8B4DFF; }
-  .tab-item:active { opacity: 0.5; }
-  .tab-icon { width: 24px; height: 24px; }
-
-  /* ========== Install Prompt ========== */
-  .install-prompt {
-    position: fixed;
-    top: calc(48px + env(safe-area-inset-top, 0px) + 8px);
-    left: 12px;
-    right: 12px;
-    z-index: 99;
-    animation: slideDown 0.4s ease-out;
-  }
-  .install-prompt-inner {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 14px;
-    background: rgba(255,255,255,0.95);
-    backdrop-filter: blur(20px);
-    border-radius: 16px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.12), 0 0 0 0.5px rgba(0,0,0,0.06);
-  }
-
-  /* ========== iOS Install Guide ========== */
-  .ios-guide-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    background: rgba(0,0,0,0.5);
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    animation: fadeIn 0.3s;
-  }
-  .ios-guide-card {
-    background: white;
-    border-radius: 20px 20px 0 0;
-    padding: 32px 24px;
-    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
-    width: 100%;
-    max-width: 500px;
-    text-align: center;
-    animation: slideUp 0.35s ease-out;
-  }
-
-  /* ========== Animations ========== */
-  @keyframes slideDown {
-    from { transform: translateY(-100%); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-  }
-  @keyframes slideUp {
-    from { transform: translateY(100%); }
-    to { transform: translateY(0); }
-  }
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
+  .sidebar-link, .tab-bar-link { transition: all 0.15s; }
+  .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
 </style>
