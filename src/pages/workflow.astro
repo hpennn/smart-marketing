@@ -1,0 +1,541 @@
+---
+import Base from '../layouts/Base.astro';
+
+const PLATFORMS = [
+  { id: 'xiaohongshu', name: '小红书', emoji: '📕' },
+  { id: 'zhihu', name: '知乎', emoji: '📘' },
+  { id: 'wechat', name: '微信公众号', emoji: '💬' },
+  { id: 'douyin', name: '抖音', emoji: '🎵' },
+  { id: 'bilibili', name: '哔哩哔哩', emoji: '📺' },
+  { id: 'weibo', name: '微博', emoji: '📢' },
+  { id: 'qywechat', name: '企业微信', emoji: '👥' },
+  { id: 'toutiao', name: '头条号', emoji: '🔥' },
+  { id: 'jike', name: '即刻', emoji: '📌' },
+];
+---
+
+<Base title="工作流配置" active="workflow">
+<main class="max-w-5xl mx-auto px-4 py-8">
+  <!-- 顶部说明 -->
+  <div class="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl p-5 mb-6 border border-purple-100">
+    <div class="flex items-center gap-3 mb-2">
+      <span class="text-2xl">⚙️</span>
+      <h2 class="text-lg font-bold text-gray-900">自动化工作流</h2>
+    </div>
+    <p class="text-sm text-gray-600">配置项目后，每次打开网站会自动生成推广内容并保存到「<a href="/publish" class="text-purple-600 underline font-medium">发布管理</a>」。也可以手动点击「立即生成」。</p>
+  </div>
+
+  <!-- 添加项目按钮 -->
+  <div class="flex items-center justify-between mb-5">
+    <h3 class="text-base font-semibold text-gray-800">我的项目</h3>
+    <button id="add-workflow-btn" class="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-sm font-medium hover:from-purple-700 hover:to-indigo-700 transition-all flex items-center gap-1.5">
+      <span class="text-lg leading-none">+</span> 添加项目
+    </button>
+  </div>
+
+  <!-- 项目列表 -->
+  <div id="workflow-list" class="space-y-4"></div>
+
+  <!-- 空状态 -->
+  <div id="empty-state" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 flex flex-col items-center justify-center text-gray-400">
+    <div class="text-6xl mb-4">📋</div>
+    <p class="text-lg font-medium">还没有配置工作流</p>
+    <p class="text-sm mt-1 mb-6">添加项目后，系统会自动定期生成推广内容</p>
+    <button onclick="document.getElementById('add-workflow-btn')?.click()" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-sm font-medium hover:from-purple-700 hover:to-indigo-700 transition-all">
+      + 添加第一个项目
+    </button>
+  </div>
+
+  <!-- 添加/编辑弹窗 -->
+  <div id="edit-modal" style="display:none" class="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl p-6 max-w-[560px] w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+      <h3 id="modal-title" class="text-lg font-bold text-gray-900 mb-5">添加项目</h3>
+      <input type="hidden" id="edit-id" value="">
+
+      <div class="space-y-4">
+        <!-- 产品名称 -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">产品名称 <span class="text-red-500">*</span></label>
+          <input id="wf-product" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent" placeholder="例：AI智能客服系统">
+        </div>
+
+        <!-- 产品描述 -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">产品描述 <span class="text-red-500">*</span></label>
+          <textarea id="wf-desc" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none" placeholder="核心卖点、目标人群、使用场景等"></textarea>
+        </div>
+
+        <!-- 目标平台 -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">目标平台</label>
+          <div class="grid grid-cols-3 gap-2">
+            {PLATFORMS.map(p => (
+              <label class="wf-platform-label flex items-center gap-2 p-2 rounded-xl border border-gray-200 cursor-pointer hover:border-purple-300 transition-all has-[:checked]:border-purple-500 has-[:checked]:bg-purple-50">
+                <input type="checkbox" value={p.id} class="wf-platform-cb w-4 h-4 rounded text-purple-600" checked>
+                <span class="text-base">{p.emoji}</span>
+                <span class="text-sm text-gray-700">{p.name}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <!-- 生成内容 -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">生成内容</label>
+          <div class="flex flex-wrap gap-3">
+            <label class="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 cursor-pointer hover:border-purple-300 transition-all has-[:checked]:border-purple-500 has-[:checked]:bg-purple-50">
+              <input type="checkbox" id="wf-type-copy" class="w-4 h-4 rounded text-purple-600" checked>
+              <span class="text-sm text-gray-700">✍️ 文案</span>
+            </label>
+            <label class="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 cursor-pointer hover:border-purple-300 transition-all has-[:checked]:border-purple-500 has-[:checked]:bg-purple-50">
+              <input type="checkbox" id="wf-type-image" class="w-4 h-4 rounded text-purple-600" checked>
+              <span class="text-sm text-gray-700">🎨 配图</span>
+            </label>
+            <label class="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 cursor-pointer hover:border-purple-300 transition-all has-[:checked]:border-purple-500 has-[:checked]:bg-purple-50">
+              <input type="checkbox" id="wf-type-video" class="w-4 h-4 rounded text-purple-600">
+              <span class="text-sm text-gray-700">🎬 视频</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 生成频率 -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">自动生成频率</label>
+          <div class="grid grid-cols-4 gap-2">
+            <label class="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 cursor-pointer hover:border-purple-300 transition-all has-[:checked]:border-purple-500 has-[:checked]:bg-purple-50">
+              <input type="radio" name="wf-freq" value="daily" class="wf-freq-radio w-4 h-4 text-purple-600" checked>
+              <span class="text-sm text-gray-700">每天</span>
+            </label>
+            <label class="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 cursor-pointer hover:border-purple-300 transition-all has-[:checked]:border-purple-500 has-[:checked]:bg-purple-50">
+              <input type="radio" name="wf-freq" value="2days" class="wf-freq-radio w-4 h-4 text-purple-600">
+              <span class="text-sm text-gray-700">每2天</span>
+            </label>
+            <label class="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 cursor-pointer hover:border-purple-300 transition-all has-[:checked]:border-purple-500 has-[:checked]:bg-purple-50">
+              <input type="radio" name="wf-freq" value="weekly" class="wf-freq-radio w-4 h-4 text-purple-600">
+              <span class="text-sm text-gray-700">每周</span>
+            </label>
+            <label class="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 cursor-pointer hover:border-purple-300 transition-all has-[:checked]:border-purple-500 has-[:checked]:bg-purple-50">
+              <input type="radio" name="wf-freq" value="manual" class="wf-freq-radio w-4 h-4 text-purple-600">
+              <span class="text-sm text-gray-700">仅手动</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 额外要求 -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">额外要求 <span class="text-xs text-gray-400">（选填）</span></label>
+          <input id="wf-extra" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent" placeholder="风格、字数、特殊要求等">
+        </div>
+      </div>
+
+      <div class="flex gap-3 mt-6">
+        <button id="cancel-btn" class="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-500 text-sm cursor-pointer hover:bg-gray-50 transition">取消</button>
+        <button id="save-btn" class="flex-1 py-2.5 rounded-xl border-none bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-sm font-semibold cursor-pointer hover:from-purple-700 hover:to-indigo-700 transition">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="wf-toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-xl shadow-lg opacity-0 transition-all duration-300 pointer-events-none z-50"></div>
+</main>
+
+<script>
+  interface Workflow {
+    id: string;
+    product: string;
+    description: string;
+    platforms: string[];
+    types: { copy: boolean; image: boolean; video: boolean };
+    frequency: 'daily' | '2days' | 'weekly' | 'manual';
+    extra: string;
+    enabled: boolean;
+    lastGenerated: number | null;
+    createdAt: number;
+  }
+
+  const PLATFORMS: Record<string, { name: string; emoji: string }> = {
+    xiaohongshu: { name: '小红书', emoji: '📕' },
+    zhihu: { name: '知乎', emoji: '📘' },
+    wechat: { name: '微信公众号', emoji: '💬' },
+    douyin: { name: '抖音', emoji: '🎵' },
+    bilibili: { name: '哔哩哔哩', emoji: '📺' },
+    weibo: { name: '微博', emoji: '📢' },
+    qywechat: { name: '企业微信', emoji: '👥' },
+    toutiao: { name: '头条号', emoji: '🔥' },
+    jike: { name: '即刻', emoji: '📌' },
+  };
+
+  const FREQ_LABELS: Record<string, string> = {
+    daily: '每天',
+    '2days': '每2天',
+    weekly: '每周',
+    manual: '仅手动',
+  };
+
+  const FREQ_MS: Record<string, number> = {
+    daily: 24 * 60 * 60 * 1000,
+    '2days': 2 * 24 * 60 * 60 * 1000,
+    weekly: 7 * 24 * 60 * 60 * 1000,
+    manual: Infinity,
+  };
+
+  function loadWorkflows(): Workflow[] {
+    try {
+      return JSON.parse(localStorage.getItem('smart_marketing_workflows') || '[]');
+    } catch { return []; }
+  }
+
+  function saveWorkflows(wfs: Workflow[]) {
+    localStorage.setItem('smart_marketing_workflows', JSON.stringify(wfs));
+  }
+
+  function showToast(msg: string) {
+    const toast = document.getElementById('wf-toast')!;
+    toast.textContent = msg;
+    toast.classList.remove('opacity-0');
+    toast.classList.add('opacity-100');
+    setTimeout(() => { toast.classList.remove('opacity-100'); toast.classList.add('opacity-0'); }, 3000);
+  }
+
+  function escapeHtml(text: string): string {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  function formatDate(ts: number | null): string {
+    if (!ts) return '从未';
+    const d = new Date(ts);
+    const month = d.getMonth() + 1;
+    const day = d.getDate();
+    const h = d.getHours().toString().padStart(2, '0');
+    const m = d.getMinutes().toString().padStart(2, '0');
+    return `${month}/${day} ${h}:${m}`;
+  }
+
+  function getNextGenTime(wf: Workflow): string {
+    if (!wf.enabled || wf.frequency === 'manual' || !wf.lastGenerated) return '-';
+    const next = wf.lastGenerated + FREQ_MS[wf.frequency];
+    return formatDate(next);
+  }
+
+  function needsGeneration(wf: Workflow): boolean {
+    if (!wf.enabled || wf.frequency === 'manual') return false;
+    if (!wf.lastGenerated) return true;
+    return (Date.now() - wf.lastGenerated) >= FREQ_MS[wf.frequency];
+  }
+
+  // ========== 渲染列表 ==========
+  function renderList() {
+    const wfs = loadWorkflows();
+    const listEl = document.getElementById('workflow-list')!;
+    const emptyEl = document.getElementById('empty-state')!;
+
+    if (wfs.length === 0) {
+      listEl.innerHTML = '';
+      emptyEl.classList.remove('hidden');
+      return;
+    }
+    emptyEl.classList.add('hidden');
+    listEl.innerHTML = '';
+
+    wfs.forEach((wf, idx) => {
+      const card = document.createElement('div');
+      card.className = 'bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden';
+
+      const platformBadges = wf.platforms.map(pid => {
+        const p = PLATFORMS[pid];
+        return p ? `<span class="text-xs bg-purple-50 text-purple-600 px-2 py-0.5 rounded-full">${p.emoji} ${p.name}</span>` : '';
+      }).join('');
+
+      const typeBadges = [
+        wf.types.copy ? '<span class="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">✍️ 文案</span>' : '',
+        wf.types.image ? '<span class="text-xs bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full">🎨 配图</span>' : '',
+        wf.types.video ? '<span class="text-xs bg-violet-50 text-violet-600 px-2 py-0.5 rounded-full">🎬 视频</span>' : '',
+      ].filter(Boolean).join('');
+
+      const needsGen = needsGeneration(wf);
+      const statusHtml = needsGen
+        ? '<span class="text-xs bg-orange-50 text-orange-600 px-2 py-0.5 rounded-full font-medium">⏳ 待生成</span>'
+        : wf.lastGenerated
+          ? `<span class="text-xs bg-green-50 text-green-600 px-2 py-0.5 rounded-full">✅ ${formatDate(wf.lastGenerated)}</span>`
+          : '<span class="text-xs text-gray-400">未生成</span>';
+
+      card.innerHTML = `
+        <div class="px-5 py-4">
+          <div class="flex items-start justify-between mb-3">
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <h3 class="font-semibold text-gray-900">${escapeHtml(wf.product)}</h3>
+                ${wf.enabled ? '<span class="w-2 h-2 rounded-full bg-green-400"></span>' : '<span class="w-2 h-2 rounded-full bg-gray-300"></span>'}
+              </div>
+              <p class="text-sm text-gray-500 line-clamp-2">${escapeHtml(wf.description)}</p>
+            </div>
+            <div class="flex items-center gap-2 ml-3">
+              <button class="toggle-btn px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${wf.enabled ? 'border-green-200 text-green-600 hover:bg-green-50' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}" data-idx="${idx}">
+                ${wf.enabled ? '✅ 已启用' : '⏸ 已暂停'}
+              </button>
+              <button class="edit-btn text-gray-400 hover:text-purple-500 transition-colors p-1" data-idx="${idx}" title="编辑">
+                <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+              </button>
+              <button class="delete-btn text-gray-400 hover:text-red-500 transition-colors p-1" data-idx="${idx}" title="删除">
+                <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap gap-1.5 mb-3">
+            ${platformBadges}
+            ${typeBadges}
+            <span class="text-xs bg-gray-50 text-gray-500 px-2 py-0.5 rounded-full">🔄 ${FREQ_LABELS[wf.frequency]}</span>
+          </div>
+
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3 text-xs text-gray-400">
+              <span>上次: ${statusHtml}</span>
+              <span>下次: ${getNextGenTime(wf)}</span>
+            </div>
+            <button class="generate-now-btn px-4 py-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs font-medium hover:from-purple-700 hover:to-indigo-700 transition-all" data-idx="${idx}">
+              🚀 立即生成
+            </button>
+          </div>
+        </div>
+      `;
+      listEl.appendChild(card);
+    });
+
+    // 绑定事件
+    document.querySelectorAll('.toggle-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt((btn as HTMLElement).dataset.idx!);
+        const wfs = loadWorkflows();
+        wfs[idx].enabled = !wfs[idx].enabled;
+        saveWorkflows(wfs);
+        renderList();
+        showToast(wfs[idx].enabled ? '✅ 已启用' : '⏸ 已暂停');
+      });
+    });
+
+    document.querySelectorAll('.edit-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt((btn as HTMLElement).dataset.idx!);
+        openEditModal(idx);
+      });
+    });
+
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt((btn as HTMLElement).dataset.idx!);
+        if (!confirm('确定删除此工作流？')) return;
+        const wfs = loadWorkflows();
+        wfs.splice(idx, 1);
+        saveWorkflows(wfs);
+        renderList();
+        showToast('🗑 已删除');
+      });
+    });
+
+    document.querySelectorAll('.generate-now-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt((btn as HTMLElement).dataset.idx!);
+        generateForWorkflow(idx, btn as HTMLElement);
+      });
+    });
+  }
+
+  // ========== 弹窗 ==========
+  function openEditModal(editIdx?: number) {
+    const modal = document.getElementById('edit-modal')!;
+    const title = document.getElementById('modal-title')!;
+    const idInput = document.getElementById('edit-id') as HTMLInputElement;
+
+    if (editIdx !== undefined) {
+      const wfs = loadWorkflows();
+      const wf = wfs[editIdx];
+      title.textContent = '编辑项目';
+      idInput.value = editIdx.toString();
+      (document.getElementById('wf-product') as HTMLInputElement).value = wf.product;
+      (document.getElementById('wf-desc') as HTMLInputElement).value = wf.description;
+      (document.getElementById('wf-extra') as HTMLInputElement).value = wf.extra || '';
+
+      // 平台
+      document.querySelectorAll<HTMLInputElement>('.wf-platform-cb').forEach(cb => {
+        cb.checked = wf.platforms.includes(cb.value);
+      });
+      // 类型
+      (document.getElementById('wf-type-copy') as HTMLInputElement).checked = wf.types.copy;
+      (document.getElementById('wf-type-image') as HTMLInputElement).checked = wf.types.image;
+      (document.getElementById('wf-type-video') as HTMLInputElement).checked = wf.types.video;
+      // 频率
+      document.querySelectorAll<HTMLInputElement>('.wf-freq-radio').forEach(r => {
+        r.checked = r.value === wf.frequency;
+      });
+    } else {
+      title.textContent = '添加项目';
+      idInput.value = '';
+      (document.getElementById('wf-product') as HTMLInputElement).value = '';
+      (document.getElementById('wf-desc') as HTMLInputElement).value = '';
+      (document.getElementById('wf-extra') as HTMLInputElement).value = '';
+      document.querySelectorAll<HTMLInputElement>('.wf-platform-cb').forEach(cb => { cb.checked = true; });
+      (document.getElementById('wf-type-copy') as HTMLInputElement).checked = true;
+      (document.getElementById('wf-type-image') as HTMLInputElement).checked = true;
+      (document.getElementById('wf-type-video') as HTMLInputElement).checked = false;
+      document.querySelectorAll<HTMLInputElement>('.wf-freq-radio').forEach(r => {
+        r.checked = r.value === 'daily';
+      });
+    }
+
+    modal.style.display = 'flex';
+  }
+
+  function closeEditModal() {
+    document.getElementById('edit-modal')!.style.display = 'none';
+  }
+
+  function saveFromModal() {
+    const product = (document.getElementById('wf-product') as HTMLInputElement).value.trim();
+    const desc = (document.getElementById('wf-desc') as HTMLInputElement).value.trim();
+    if (!product || !desc) { showToast('❌ 请填写产品名称和描述'); return; }
+
+    const platforms: string[] = [];
+    document.querySelectorAll<HTMLInputElement>('.wf-platform-cb:checked').forEach(cb => {
+      platforms.push(cb.value);
+    });
+    if (platforms.length === 0) { showToast('❌ 至少选择一个平台'); return; }
+
+    const types = {
+      copy: (document.getElementById('wf-type-copy') as HTMLInputElement).checked,
+      image: (document.getElementById('wf-type-image') as HTMLInputElement).checked,
+      video: (document.getElementById('wf-type-video') as HTMLInputElement).checked,
+    };
+
+    let frequency: 'daily' | '2days' | 'weekly' | 'manual' = 'daily';
+    document.querySelectorAll<HTMLInputElement>('.wf-freq-radio:checked').forEach(r => {
+      frequency = r.value as any;
+    });
+
+    const extra = (document.getElementById('wf-extra') as HTMLInputElement).value.trim();
+    const editId = (document.getElementById('edit-id') as HTMLInputElement).value;
+
+    const wfs = loadWorkflows();
+    if (editId !== '') {
+      // 编辑
+      const idx = parseInt(editId);
+      wfs[idx] = { ...wfs[idx], product, description: desc, platforms, types, frequency, extra };
+    } else {
+      // 新增
+      wfs.push({
+        id: Date.now().toString(),
+        product,
+        description: desc,
+        platforms,
+        types,
+        frequency,
+        extra,
+        enabled: true,
+        lastGenerated: null,
+        createdAt: Date.now(),
+      });
+    }
+    saveWorkflows(wfs);
+    closeEditModal();
+    renderList();
+    showToast(editId !== '' ? '✅ 已保存' : '✅ 项目已添加');
+  }
+
+  // ========== 生成 ==========
+  async function generateForWorkflow(idx: number, btn?: HTMLElement) {
+    const wfs = loadWorkflows();
+    const wf = wfs[idx];
+    if (!wf) return;
+
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '⏳ 生成中...';
+    }
+
+    try {
+      // 确定调用类型
+      const hasMultipleTypes = (wf.types.copy ? 1 : 0) + (wf.types.image ? 1 : 0) + (wf.types.video ? 1 : 0) > 1;
+      const type = hasMultipleTypes ? 'batch' : (wf.types.copy ? 'copy' : (wf.types.image ? 'image' : 'video'));
+
+      // 需要生成的平台
+      const targetPlatforms = wf.platforms;
+
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type,
+          product: wf.description,
+          platforms: targetPlatforms,
+          extra: wf.extra || '',
+        }),
+      });
+
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || '生成失败');
+
+      // 保存到历史记录
+      const historyEntry: any = {
+        id: Date.now().toString(),
+        date: new Date().toLocaleDateString('zh-CN'),
+        product: wf.product,
+        platforms: wf.platforms,
+      };
+
+      if (data.results.copy) historyEntry.copy = data.results.copy;
+      if (data.results.image) historyEntry.image = data.results.image;
+      if (data.results.video) historyEntry.video = data.results.video;
+
+      // 追加到 smart_marketing_history
+      const history = JSON.parse(localStorage.getItem('smart_marketing_history') || '[]');
+      history.push(historyEntry);
+      localStorage.setItem('smart_marketing_history', JSON.stringify(history));
+
+      // 更新工作流的上次生成时间
+      const updatedWfs = loadWorkflows();
+      if (updatedWfs[idx]) {
+        updatedWfs[idx].lastGenerated = Date.now();
+        saveWorkflows(updatedWfs);
+      }
+
+      renderList();
+      showToast(`✅ 「${wf.product}」推广内容已生成并保存`);
+    } catch (e: any) {
+      showToast(`❌ 生成失败: ${e.message}`);
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '🚀 立即生成';
+      }
+    }
+  }
+
+  // ========== 自动生成检查（其他页面加载时也会执行）==========
+  window.__runWorkflowAutoGen = async function() {
+    const wfs = loadWorkflows();
+    const pending = wfs.filter(wf => needsGeneration(wf));
+    if (pending.length === 0) return;
+
+    // 避免同时生成多个
+    for (let i = 0; i < wfs.length; i++) {
+      if (!needsGeneration(wfs[i])) continue;
+      console.log(`[工作流] 自动生成: ${wfs[i].product}`);
+      await generateForWorkflow(i);
+      // 等待避免 API 限流
+      await new Promise(r => setTimeout(r, 1000));
+    }
+  };
+
+  // ========== 事件绑定 ==========
+  document.getElementById('add-workflow-btn')!.addEventListener('click', () => openEditModal());
+  document.getElementById('cancel-btn')!.addEventListener('click', closeEditModal);
+  document.getElementById('save-btn')!.addEventListener('click', saveFromModal);
+  document.getElementById('edit-modal')!.addEventListener('click', (e) => {
+    if ((e.target as HTMLElement).id === 'edit-modal') closeEditModal();
+  });
+
+  renderList();
+</script>
+</Base>

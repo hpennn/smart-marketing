@@ -25,6 +25,7 @@ const { title, active = '' } = Astro.props;
         <a href="/copy" class="nav-link px-3 py-1.5 rounded-lg text-sm" data-nav="copy">文案生成</a>
         <a href="/generate" class="nav-link px-3 py-1.5 rounded-lg text-sm" data-nav="generate">批量推广</a>
         <a href="/publish" class="nav-link px-3 py-1.5 rounded-lg text-sm" data-nav="publish">发布管理</a>
+        <a href="/workflow" class="nav-link px-3 py-1.5 rounded-lg text-sm" data-nav="workflow">⚙️ 工作流</a>
       </div>
     </div>
   </nav>
@@ -41,6 +42,59 @@ const { title, active = '' } = Astro.props;
         link.classList.add('text-gray-600', 'hover:bg-gray-100');
       }
     });
+
+    // ========== 工作流自动生成检查 ==========
+    (async function checkWorkflowAutoGen() {
+      // 不在工作流页面执行（工作流页面自己处理）
+      if (active === 'workflow') return;
+
+      const FREQ_MS = { daily: 86400000, '2days': 172800000, weekly: 604800000 };
+      let wfs;
+      try { wfs = JSON.parse(localStorage.getItem('smart_marketing_workflows') || '[]'); } catch { return; }
+      if (!wfs.length) return;
+
+      // 找出需要自动生成的工作流
+      const pending = wfs.filter(wf => {
+        if (!wf.enabled || wf.frequency === 'manual') return false;
+        if (!wf.lastGenerated) return true;
+        return (Date.now() - wf.lastGenerated) >= (FREQ_MS[wf.frequency] || 86400000);
+      });
+      if (!pending.length) return;
+
+      // 逐个生成
+      for (const wf of pending) {
+        try {
+          const hasMulti = (wf.types.copy ? 1 : 0) + (wf.types.image ? 1 : 0) + (wf.types.video ? 1 : 0) > 1;
+          const type = hasMulti ? 'batch' : (wf.types.copy ? 'copy' : (wf.types.image ? 'image' : 'video'));
+
+          const res = await fetch('/api/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type, product: wf.description, platforms: wf.platforms, extra: wf.extra || '' }),
+          });
+          const data = await res.json();
+          if (!data.success) continue;
+
+          // 保存到历史
+          const entry = { id: Date.now().toString(), date: new Date().toLocaleDateString('zh-CN'), product: wf.product, platforms: wf.platforms };
+          if (data.results.copy) entry.copy = data.results.copy;
+          if (data.results.image) entry.image = data.results.image;
+          if (data.results.video) entry.video = data.results.video;
+
+          const history = JSON.parse(localStorage.getItem('smart_marketing_history') || '[]');
+          history.push(entry);
+          localStorage.setItem('smart_marketing_history', JSON.stringify(history));
+
+          // 更新上次生成时间
+          const updatedWfs = JSON.parse(localStorage.getItem('smart_marketing_workflows') || '[]');
+          const idx = updatedWfs.findIndex(w => w.id === wf.id);
+          if (idx >= 0) { updatedWfs[idx].lastGenerated = Date.now(); localStorage.setItem('smart_marketing_workflows', JSON.stringify(updatedWfs)); }
+
+          console.log(`[工作流] 已自动生成: ${wf.product}`);
+          await new Promise(r => setTimeout(r, 1000));
+        } catch (e) { console.error('[工作流] 自动生成失败:', e); }
+      }
+    })();
   </script>
 </body>
 </html>
