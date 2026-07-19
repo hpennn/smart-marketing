@@ -75,11 +75,14 @@ export const POST: APIRoute = async ({ request }) => {
     const modelId = import.meta.env.ARK_MODEL_ID;
 
     if (!apiKey || !modelId) {
-      return new JSONResponse({ error: 'API 配置缺失' }, { status: 500 });
+      return new Response(JSON.stringify({ error: 'API 配置缺失' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     async function callDoubao(systemPrompt: string, userPrompt: string): Promise<string> {
-      const res = await fetch(`https://ark.cn-beijing.volces.com/api/v3/chat/completions`, {
+      const res = await fetch('https://ark.cn-beijing.volces.com/api/v3/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -117,8 +120,9 @@ export const POST: APIRoute = async ({ request }) => {
             userPrompt
           );
           return { platform: p, content };
-        } catch (e: any) {
-          return { platform: p, content: `生成失败: ${e.message}` };
+        } catch (e: unknown) {
+          const msg = e instanceof Error ? e.message : '未知错误';
+          return { platform: p, content: `生成失败: ${msg}` };
         }
       });
 
@@ -130,8 +134,9 @@ export const POST: APIRoute = async ({ request }) => {
       const userPrompt = `产品/主题：${product}\n风格偏好：${extra || '现代清新，适合社交媒体'}`;
       try {
         results.image = await callDoubao(IMAGE_PROMPT_SYSTEM, userPrompt);
-      } catch (e: any) {
-        results.image = `生成失败: ${e.message}`;
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : '未知错误';
+        results.image = `生成失败: ${msg}`;
       }
     }
 
@@ -144,16 +149,24 @@ export const POST: APIRoute = async ({ request }) => {
         try {
           const content = await callDoubao(VIDEO_SCRIPT_SYSTEM, userPrompt);
           return { platform: p, content };
-        } catch (e: any) {
-          return { platform: p, content: `生成失败: ${e.message}` };
+        } catch (e: unknown) {
+          const msg = e instanceof Error ? e.message : '未知错误';
+          return { platform: p, content: `生成失败: ${msg}` };
         }
       });
       const videoResults = await Promise.all(videoPromises);
       results.video = videoResults;
     }
 
-    return new JSONResponse({ success: true, results });
-  } catch (e: any) {
-    return new JSONResponse({ error: e.message || '请求失败' }, { status: 400 });
+    return new Response(JSON.stringify({ success: true, results }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : '请求失败';
+    return new Response(JSON.stringify({ error: msg }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 };
