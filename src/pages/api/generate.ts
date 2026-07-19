@@ -46,24 +46,25 @@ const PLATFORM_PROMPTS: Record<string, PlatformPrompt> = {
   }
 };
 
-const IMAGE_PROMPT_SYSTEM = `你是一位AI配图提示词专家。根据产品特点和推广内容，生成适合AI绘画工具（如Midjourney、DALL-E、即梦）的英文提示词。
+const IMAGE_PROMPT_SYSTEM = `你是一位AI配图提示词专家。根据产品特点和推广内容，生成适合AI绘画工具（如Midjourney、DALL-E、Stable Diffusion、Flux等）的英文提示词。
 输出格式：
 1. 主图提示词（英文，50-80词，详细描述画面内容、风格、色调、构图）
 2. 配图建议（中文，说明这张图适合用在什么位置）
 要求：风格清新现代，适合社交媒体传播。避免文字、水印、logo。`;
 
-const VIDEO_SCRIPT_SYSTEM = `你是一位短视频脚本策划专家。根据产品信息生成适合即梦AI视频生成的详细脚本。
+const VIDEO_SCRIPT_SYSTEM = `你是一位短视频脚本策划专家。根据产品信息生成适合AI视频生成工具（如豆包AI）和剪映后期制作的详细分镜脚本。
 输出格式：
 1. 视频主题（一句话概括）
 2. 分镜列表（3-5个分镜），每个分镜包含：
-   - 【画面】详细的视觉描述（可直接作为即梦的输入提示词）
+   - 【画面提示词】详细的视觉描述，可直接作为豆包AI视频生成的输入提示词（中文描述，包含主体、场景、光影、色调、运镜方式）
    - 【时长】建议时长（秒）
-   - 【旁白】配文/旁白
-   - 【运镜】镜头运动建议
-3. 整体风格建议
-4. 即梦生成参数建议（比例、时长、风格）
+   - 【旁白/字幕】配文或旁白文案
+   - 【运镜】镜头运动建议（如推、拉、摇、移、跟、环绕等）
+   - 【音效/BGM】音效或背景音乐建议
+3. 豆包AI生成参数建议（画面比例、时长、风格关键词）
+4. 剪映制作建议（转场效果、字幕样式、配乐节奏点等）
 
-要求：画面描述要具体生动，可以直接复制到即梦AI中使用。每个分镜的画面描述用英文。`;
+要求：画面提示词要具体生动、画面感强，可以直接复制到豆包AI视频生成功能中使用。包含场景、光线、色彩、构图、镜头运动等关键信息。`;
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -104,7 +105,6 @@ export const POST: APIRoute = async ({ request }) => {
     const results: Record<string, any> = {};
 
     if (type === 'copy' || type === 'batch') {
-      // Generate copy for each selected platform
       const selectedPlatforms = platforms || ['xiaohongshu'];
       const userPrompt = `产品信息：${product}\n${extra ? `额外要求：${extra}` : ''}`;
 
@@ -127,7 +127,6 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     if (type === 'image') {
-      // Generate image prompts
       const userPrompt = `产品/主题：${product}\n风格偏好：${extra || '现代清新，适合社交媒体'}`;
       try {
         results.image = await callDoubao(IMAGE_PROMPT_SYSTEM, userPrompt);
@@ -137,13 +136,20 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     if (type === 'video' || type === 'batch') {
-      // Generate video script
-      const userPrompt = `产品/主题：${product}\n视频平台：${extra || '抖音/小红书'}\n视频时长：${type === 'batch' ? '30-60秒' : '30-60秒'}`;
-      try {
-        results.video = await callDoubao(VIDEO_SCRIPT_SYSTEM, userPrompt);
-      } catch (e: any) {
-        results.video = `生成失败: ${e.message}`;
-      }
+      const selectedPlatforms = platforms || ['xiaohongshu'];
+      const videoPromises = selectedPlatforms.map(async (p: string) => {
+        const platformInfo = PLATFORM_PROMPTS[p];
+        const platformName = platformInfo ? p : '通用';
+        const userPrompt = `产品/主题：${product}\n目标平台：${platformName}\n${extra ? `额外要求：${extra}` : ''}\n视频时长：30-60秒`;
+        try {
+          const content = await callDoubao(VIDEO_SCRIPT_SYSTEM, userPrompt);
+          return { platform: p, content };
+        } catch (e: any) {
+          return { platform: p, content: `生成失败: ${e.message}` };
+        }
+      });
+      const videoResults = await Promise.all(videoPromises);
+      results.video = videoResults;
     }
 
     return new JSONResponse({ success: true, results });
