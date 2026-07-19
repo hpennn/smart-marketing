@@ -231,7 +231,7 @@ const FREQ_LABELS: Record<string, string> = {
 <!-- Toast -->
 <div id="toast" class="fixed top-16 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-4 py-2 rounded-xl text-sm shadow-lg transition-all opacity-0 pointer-events-none z-[99999]" style="transition:opacity .3s"></div>
 
-<script is:inline>
+<script>
   // ========== 工具函数 ==========
   function showToast(msg: string) {
     const t = document.getElementById('toast')!;
