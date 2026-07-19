@@ -7,6 +7,9 @@ interface PlatformPrompt {
   format: string;
 }
 
+// 平台合规通用规则：禁止输出域名、链接、二维码等引流内容
+const COMPLIANCE_RULE = '\n\n【合规要求】严禁在文案中出现任何域名（如xxx.com/xxx.cn）、URL链接、二维码、微信号等外部引流信息。如需引导用户了解产品，请用"搜索「产品名」即可找到"、"主页有链接"、"评论区告诉我"等话术代替。';
+
 const PLATFORM_PROMPTS: Record<string, PlatformPrompt> = {
   xiaohongshu: {
     system: '你是一位专业的小红书种草文案写手。风格真实、亲切、有感染力，像朋友分享好物。',
@@ -116,7 +119,7 @@ export const POST: APIRoute = async ({ request }) => {
         if (!promptConfig) return { platform: p, content: '不支持的平台' };
         try {
           const content = await callDoubao(
-            promptConfig.system + '\n\n' + promptConfig.format,
+            promptConfig.system + '\n\n' + promptConfig.format + COMPLIANCE_RULE,
             userPrompt
           );
           return { platform: p, content };
