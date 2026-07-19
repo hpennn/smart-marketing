@@ -173,9 +173,18 @@ const PLATFORMS = [
           extra,
         }),
       });
-      const data = await res.json();
 
-      if (data.success && data.results?.copy?.length > 0) {
+      if (!res.ok) {
+        var errData = null;
+        try { errData = await res.json(); } catch(e) {}
+        document.getElementById('error-msg').textContent = (errData && errData.error) ? errData.error : ('请求失败 (' + res.status + ')');
+        showState('error');
+        return;
+      }
+
+      var data = await res.json();
+
+      if (data.success && data.results && data.results.copy && data.results.copy.length > 0) {
         lastResult = data.results.copy[0];
         const platformInfo = PLATFORMS.find(p => p.id === lastResult.platform);
         resultPlatform.textContent = `${platformInfo ? platformInfo.emoji + ' ' + platformInfo.name : lastResult.platform}`;
@@ -200,11 +209,11 @@ const PLATFORMS = [
           console.error('保存历史失败', e);
         }
       } else {
-        document.getElementById('error-msg')!.textContent = data.error || '生成失败';
+        document.getElementById('error-msg').textContent = data.error || '生成失败';
         showState('error');
       }
     } catch (e) {
-      document.getElementById('error-msg')!.textContent = '网络错误';
+      document.getElementById('error-msg').textContent = '网络错误';
       showState('error');
     } finally {
       setLoading(false);
